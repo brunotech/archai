@@ -130,7 +130,7 @@ def train_epoch(epoch, net, train_dl, device, crit, optim,
                 sched, sched_on_epoch, half, grad_clip:float) -> Tuple[float, float]:
     correct, total, loss_total = 0, 0, 0.0
     net.train()
-    for batch_idx, (inputs, targets) in enumerate(train_dl):
+    for inputs, targets in train_dl:
         inputs = inputs.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
 
@@ -169,7 +169,7 @@ def test(net, test_dl, device, half) -> float:
     correct, total = 0, 0
     net.eval()
     with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(test_dl):
+        for inputs, targets in test_dl:
             inputs = inputs.to(device, non_blocking=False)
             targets = targets.to(device)
 
@@ -316,9 +316,9 @@ def main():
         nsds_dir = os.environ.get('PT_DATA_DIR')
     if not args.outdir:
         args.outdir = os.environ.get('PT_OUTPUT_DIR', '')
-        if not args.outdir:
-            args.outdir = os.path.join(
-                '~/logdir', 'nasbench101', args.experiment_name)
+    if not args.outdir:
+        args.outdir = os.path.join(
+            '~/logdir', 'nasbench101', args.experiment_name)
     assert isinstance(nsds_dir, str)
 
     expdir = utils.full_path(args.outdir)

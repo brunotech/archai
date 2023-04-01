@@ -58,7 +58,8 @@ class Corpus:
 
         # Corpus cache is created using dataset/vocab_type/vocab_size path
         self.corpus_cache_dir = utils.full_path(
-            os.path.join(cache_dir, str(dataset), str(vocab_type), str(vocab_size)), create=True
+            os.path.join(cache_dir, dataset, vocab_type, str(vocab_size)),
+            create=True,
         )
 
         # Encoded dataset (.npy files) cache paths
@@ -95,13 +96,13 @@ class Corpus:
         if vocab_type == "word":
             bos_token, eos_token, lower_case = None, "<eos>", False
 
-            if dataset in ["wt103", "wt2"] or dataset.startswith("olx_"):
+            if dataset in {"wt103", "wt2"} or dataset.startswith("olx_"):
                 pass
             elif dataset == "ptb":
                 lower_case = True
             elif dataset == "lm1b":
                 bos_token, eos_token = "<S>", "<S>"  # `<S>` is added for double EOS
-            elif dataset in ["enwik8", "text8"]:
+            elif dataset in {"enwik8", "text8"}:
                 eos_token, lower_case = None, True
             else:
                 raise RuntimeError(f"Dataset: {dataset} is not supported yet.")
@@ -322,7 +323,7 @@ class Corpus:
             else:
                 raise RuntimeError(f"Dataset: {self.dataset} is not supported yet.")
 
-        elif split in ["valid", "test"]:
+        elif split in {"valid", "test"}:
             input_ids = self.valid if split == "valid" else self.test
 
             if self.dataset in ["wt2", "wt103", "lm1b"] or self.dataset.startswith("olx_"):

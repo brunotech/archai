@@ -65,8 +65,6 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
-    output = {}
-
     random.seed(args.seed)
     np.random.seed(args.seed)
 
@@ -84,7 +82,11 @@ if __name__ == "__main__":
 
     # Profiles the model
     inputs = {"input_ids": torch.zeros((1, harness_model.max_length), dtype=torch.long).to(harness_model.device)}
-    output["profiler"] = profile(harness_model.model, model_kwargs=inputs, n_warmups=1)
+    output = {
+        "profiler": profile(
+            harness_model.model, model_kwargs=inputs, n_warmups=1
+        )
+    }
     output["model"] = harness_model.model.config.to_dict()
 
     for task in args.tasks:
@@ -98,7 +100,7 @@ if __name__ == "__main__":
 
     output_path = os.path.join(
         args.output_dir,
-        args.prefix + f"{harness_model.model_name}-{args.n_few_shot_samples}shot.json",
+        f"{args.prefix}{harness_model.model_name}-{args.n_few_shot_samples}shot.json",
     )
     with open(output_path, "w") as f:
         json.dump(output, f)

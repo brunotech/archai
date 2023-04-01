@@ -106,6 +106,4 @@ def clean_sample_text(text: str) -> str:
     text = text.replace("( ", "(")
     text = text.replace('" ', '"')
     text = text.replace(' "', '"')
-    text = re.sub(r" (['.,])", r"\1", text)
-
-    return text
+    return re.sub(r" (['.,])", r"\1", text)

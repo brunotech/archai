@@ -144,7 +144,7 @@ class ApexUtils:
         #     if len(vals) == 2:
         #         _log_info('GPU {} mem: {}, used: {}'.format(i, vals[0], vals[1]))
 
-    def _set_ranks(self, conf_gpu_ids:str)->None:
+    def _set_ranks(self, conf_gpu_ids:str) -> None:
 
         # this function needs to work even when torch.distributed is not available
 
@@ -158,14 +158,10 @@ class ApexUtils:
         else:
             self.local_rank = 0
 
-        if 'RANK' in os.environ:
-            self.global_rank = int(os.environ['RANK'])
-        else:
-            self.global_rank = 0
-
+        self.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else 0
         assert self.local_rank < torch.cuda.device_count(), \
-            f'local_rank={self.local_rank} but device_count={torch.cuda.device_count()}' \
-            ' Possible cause may be Pytorch is not GPU enabled or you have too few GPUs'
+                f'local_rank={self.local_rank} but device_count={torch.cuda.device_count()}' \
+                ' Possible cause may be Pytorch is not GPU enabled or you have too few GPUs'
 
         self.gpu_ids = [int(i) for i in conf_gpu_ids.split(',') if i]
         # which GPU to use, we will use only 1 GPU per process to avoid complications with apex
@@ -198,24 +194,21 @@ class ApexUtils:
             dist.barrier() # wait for all processes to come to this point
 
     def reduce(self, val, op='mean'):
-        if self.is_dist():
-            if not isinstance(val, Tensor):
-                rt = torch.tensor(val).to(self.device)
-                converted = True
-            else:
-                rt = val.clone().to(self.device)
-                converted = False
-
-            r_op = self._op_map[op]
-            dist.all_reduce(rt, op=r_op)
-            if op=='mean':
-                rt /= self.world_size
-
-            if converted and len(rt.shape)==0:
-                return rt.item()
-            return rt
-        else:
+        if not self.is_dist():
             return val
+        if not isinstance(val, Tensor):
+            rt = torch.tensor(val).to(self.device)
+            converted = True
+        else:
+            rt = val.clone().to(self.device)
+            converted = False
+
+        r_op = self._op_map[op]
+        dist.all_reduce(rt, op=r_op)
+        if op=='mean':
+            rt /= self.world_size
+
+        return rt.item() if converted and len(rt.shape)==0 else rt
 
     def _get_optim(self, multi_optim:MultiOptim)->Optimizer:
         assert len(multi_optim)==1, \
@@ -275,10 +268,7 @@ class ApexUtils:
                 nn.utils.clip_grad_norm_(model.parameters(), clip)
 
     def state_dict(self):
-        if self.is_mixed():
-            return self._amp.state_dict()
-        else:
-            return None
+        return self._amp.state_dict() if self.is_mixed() else None
 
     def load_state_dict(self, state_dict):
         if self.is_mixed():

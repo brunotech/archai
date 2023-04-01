@@ -196,7 +196,6 @@ class BilevelOptimizer:
             for p, v in zip(self._model_params(), dw):
                 p += epsilon * v
 
-        # apply eq 8, final difference to compute hessian
-        h = [(p - m) / (2. * epsilon)
-             for p, m in zip(dalpha_plus, dalpha_minus)]
-        return h
+        return [
+            (p - m) / (2.0 * epsilon) for p, m in zip(dalpha_plus, dalpha_minus)
+        ]

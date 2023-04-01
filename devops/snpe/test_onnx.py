@@ -55,7 +55,7 @@ def test_onnx(dataset_dir, model, out_dir, test_size=1000, show=False):
             inf = inf.reshape(inf.shape[1:])  # remove batch dimension
             inf = inf.transpose(reverse).reshape((ow, oh, -1))
             basename = os.path.splitext(os.path.basename(fname))[0]
-            filename = os.path.join(out_dir, basename + ".raw")
+            filename = os.path.join(out_dir, f"{basename}.raw")
             inf.tofile(filename)
 
             if show:
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     dataset = args.input
     if not dataset:
         dataset = os.getenv("INPUT_DATASET")
-        if not dataset:
-            print("please provide --input or set your INPUT_DATASET environment vairable")
-            sys.exit(1)
+    if not dataset:
+        print("please provide --input or set your INPUT_DATASET environment vairable")
+        sys.exit(1)
 
     test_onnx(dataset, args.model, args.output, show=args.show)

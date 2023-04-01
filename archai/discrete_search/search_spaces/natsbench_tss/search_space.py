@@ -30,38 +30,39 @@ class NatsbenchTssSearchSpace(EvolutionarySearchSpace, BayesOptSearchSpace):
     def __init__(self, natsbench_location: str, base_dataset: str, seed: int = 1) -> None:
         self.natsbench_location = Path(natsbench_location)
         self.base_dataset = base_dataset
-        assert base_dataset in ['cifar10', 'cifar100', 'ImageNet16-120'], \
-            "`base_dataset` must be one of ['cifar10', 'cifar100', 'ImageNet16-120']" 
+        assert base_dataset in {
+            'cifar10',
+            'cifar100',
+            'ImageNet16-120',
+        }, "`base_dataset` must be one of ['cifar10', 'cifar100', 'ImageNet16-120']" 
 
         if not self.natsbench_location.exists():
             raise FileNotFoundError(
                 'The provided path to `natsbench_location` ('
                 f'{self.natsbench_location.absolute()}) does not exist'
             )
-    
+
         self.api = nats_bench.create(
             natsbench_location, 'tss', fast_mode=True, verbose=False
         )
         self.rng = random.Random(seed)
-        self.archid_pattern = re.compile(f'natsbench-tss-([0-9]+)')
+        self.archid_pattern = re.compile('natsbench-tss-([0-9]+)')
 
     def _get_op_list(self, string:str) -> List[str]:
         ''' Reused from https://github.com/naszilla/naszilla/blob/master/naszilla/nas_bench_201/cell_201.py '''
         # Given a string, get the list of operations
         tokens = string.split('|')
-        ops = [t.split('~')[0] for i, t in enumerate(tokens) if i not in [0, 2, 5, 9]]
-        
-        return ops
+        return [t.split('~')[0] for i, t in enumerate(tokens) if i not in [0, 2, 5, 9]]
 
     def _get_string_from_ops(self, ops):
         ''' Reused from https://github.com/naszilla/naszilla/blob/master/naszilla/nas_bench_201/cell_201.py '''
         # Given a list of operations, get the string
-        
+
         strings = ['|']
         nodes = [0, 0, 1, 0, 1, 2]
-        
+
         for i, op in enumerate(ops):
-            strings.append(op+'~{}|'.format(nodes[i]))
+            strings.append(f'{op}~{nodes[i]}|')
             if i < len(nodes) - 1 and nodes[i+1] == 0:
                 strings.append('+|')
         return ''.join(strings)

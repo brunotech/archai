@@ -46,11 +46,7 @@ def upload_blob(name, file, blob_name=None):
         sys.exit(1)
 
     filename = os.path.basename(file)
-    if blob_name:
-        blob = f"{name}/{blob_name}"
-    else:
-        blob = f"{name}/{filename}"
-
+    blob = f"{name}/{blob_name}" if blob_name else f"{name}/{filename}"
     container_client = ContainerClient.from_connection_string(conn_string, container_name="models")
     try:
         if not container_client.exists():

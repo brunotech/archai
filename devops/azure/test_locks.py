@@ -40,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--delay', type=float, help='Seconds delay between lock unlock ops (default 1).', default=1)
     args = parser.parse_args()
 
-    set_unique_node_id(get_unique_node_id() + f'_{os.getpid()}')
+    set_unique_node_id(f'{get_unique_node_id()}_{os.getpid()}')
     name = args.name
     delay = args.delay
     service = get_status_table_service(get_connection_string())

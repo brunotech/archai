@@ -87,17 +87,13 @@ class Searcher(EnforceOverrides):
 
     def build_model_desc(self, model_desc_builder:ModelDescBuilder,
                          conf_model_desc:Config,
-                         reductions:int, cells:int, nodes:int)->ModelDesc:
+                         reductions:int, cells:int, nodes:int) -> ModelDesc:
         # reset macro params in copy of config
         conf_model_desc = copy.deepcopy(conf_model_desc)
         conf_model_desc['n_reductions'] = reductions
         conf_model_desc['n_cells'] = cells
 
-        # create model desc for search using model config
-        # we will build model without call to model_desc_builder for pre-training
-        model_desc = model_desc_builder.build(conf_model_desc, template=None)
-
-        return model_desc
+        return model_desc_builder.build(conf_model_desc, template=None)
 
     def get_data(self, conf_loader:Config)->data.DataLoaders:
 

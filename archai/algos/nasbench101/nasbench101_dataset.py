@@ -156,8 +156,9 @@ class Nasbench101Dataset(object):
       raise OutOfDomainError('last operation should be \'output\'')
     for op in model_spec.ops[1:-1]:
       if op not in self.config['available_ops']:
-        raise OutOfDomainError('unsupported op %s (available ops = %s)'
-                               % (op, self.config['available_ops']))
+        raise OutOfDomainError(
+            f"unsupported op {op} (available ops = {self.config['available_ops']})"
+        )
 
   def _hash_spec(self, model_spec):
     """Returns the MD5 hash for a provided model_spec."""

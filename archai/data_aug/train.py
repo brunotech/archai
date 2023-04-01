@@ -42,9 +42,7 @@ def run_epoch(conf, logger, model:nn.Module, loader, loss_fn, optimizer,
     metrics = Accumulator()
     cnt = 0
     total_steps = len(loader)
-    steps = 0
     for data, label in loader:
-        steps += 1
         data, label = data.cuda(), label.cuda()
 
         if optimizer:
@@ -72,9 +70,8 @@ def run_epoch(conf, logger, model:nn.Module, loader, loss_fn, optimizer,
         cnt += len(data)
         if verbose:
             postfix = metrics / cnt
-            if optimizer:
-                if 'lr' in optimizer.param_groups[0]:
-                    postfix['lr'] = optimizer.param_groups[0]['lr']
+            if optimizer and 'lr' in optimizer.param_groups[0]:
+                postfix['lr'] = optimizer.param_groups[0]['lr']
             loader.set_postfix(postfix)
 
         # below changes LR for every batch in epoch
@@ -93,12 +90,11 @@ def run_epoch(conf, logger, model:nn.Module, loader, loss_fn, optimizer,
                 epochs, metrics / cnt)
 
     metrics /= cnt
-    if optimizer:
-        if 'lr' in optimizer.param_groups[0]:
-            metrics.metrics['lr'] = optimizer.param_groups[0]['lr']
+    if optimizer and 'lr' in optimizer.param_groups[0]:
+        metrics.metrics['lr'] = optimizer.param_groups[0]['lr']
     if verbose:
         for key, value in metrics.items():
-            writer.add_scalar('{}/{}'.format(key, split_type), value, epoch)
+            writer.add_scalar(f'{key}/{split_type}', value, epoch)
     return metrics
 
 # NOTE that 'eval' is overloaded in this code base. 'eval' here means

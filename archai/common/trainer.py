@@ -24,7 +24,7 @@ from archai.common.multi_optim import MultiOptim, OptimSched
 
 class Trainer(EnforceOverrides):
     def __init__(self, conf_train:Config, model:nn.Module,
-                 checkpoint:Optional[CheckPoint]=None)->None:
+                 checkpoint:Optional[CheckPoint]=None) -> None:
         # region config vars
         self.conf_train = conf_train
         conf_lossfn = conf_train['lossfn']
@@ -42,7 +42,7 @@ class Trainer(EnforceOverrides):
         self._validation_freq = 0 if conf_validation is None else conf_validation['freq']
         # endregion
 
-        logger.pushd(self._title + '__init__')
+        logger.pushd(f'{self._title}__init__')
 
         self._apex = ApexUtils(conf_apex, logger)
 
@@ -53,7 +53,7 @@ class Trainer(EnforceOverrides):
         # using separate apex for Tester is not possible because we must use
         # same distributed model as Trainer and hence they must share apex
         self._tester = Tester(conf_validation, model, self._apex) \
-                        if conf_validation else None
+                            if conf_validation else None
         self._metrics:Optional[Metrics] = None
 
         self._droppath_module = self._get_droppath_module()
@@ -143,9 +143,8 @@ class Trainer(EnforceOverrides):
 
         return multi_optim
 
-    def create_optimizer(self, conf_optim:Config, params)->Optimizer:
-        optim = ml_utils.create_optimizer(conf_optim, params)
-        return optim
+    def create_optimizer(self, conf_optim:Config, params) -> Optimizer:
+        return ml_utils.create_optimizer(conf_optim, params)
 
     def create_scheduler(self, conf_sched:Config, optim:Optimizer, steps_per_epoch:int) \
             ->Tuple[Optional[_LRScheduler],bool]:
@@ -189,28 +188,33 @@ class Trainer(EnforceOverrides):
     def pre_epoch(self, data_loaders:data.DataLoaders)->None:
         self._metrics.pre_epoch(lr=self._multi_optim.get_lr(0, 0))
 
-    def post_epoch(self, data_loaders:data.DataLoaders)->None:
+    def post_epoch(self, data_loaders:data.DataLoaders) -> None:
         val_metrics = None
         # first run test before checkpointing, otherwise we won't have val metrics
-        if data_loaders.val_dl and self._tester and self._validation_freq > 0:
-            if self._metrics.epochs() % self._validation_freq == 0 or \
-                    self._metrics.epochs() >= self._epochs: # last epoch
+        if (
+            data_loaders.val_dl
+            and self._tester
+            and self._validation_freq > 0
+            and (
+                self._metrics.epochs() % self._validation_freq == 0
+                or self._metrics.epochs() >= self._epochs
+            )
+        ):
+            # these asserts makes sure train and val are not ovrlapiing
+            # assert train_dl.sampler.epoch == val_dl.sampler.epoch
+            # tidx = list(train_dl.sampler)
+            # vidx = list(val_dl.sampler)
+            # assert all(ti not in vidx for ti in tidx)
 
-                # these asserts makes sure train and val are not ovrlapiing
-                # assert train_dl.sampler.epoch == val_dl.sampler.epoch
-                # tidx = list(train_dl.sampler)
-                # vidx = list(val_dl.sampler)
-                # assert all(ti not in vidx for ti in tidx)
-
-                val_metrics = self._tester.test(data_loaders.val_dl)
+            val_metrics = self._tester.test(data_loaders.val_dl)
 
         # update val metrics
         self._metrics.post_epoch(lr=self._multi_optim.get_lr(0, 0), val_metrics=val_metrics)
 
         # checkpoint if enabled with given freq or if this is the last epoch
         if self._checkpoint is not None and self._apex.is_master() and \
-            self._checkpoint.freq > 0 and (self._metrics.epochs() % self._checkpoint.freq == 0 or \
-                    self._metrics.epochs() >= self._epochs):
+                self._checkpoint.freq > 0 and (self._metrics.epochs() % self._checkpoint.freq == 0 or \
+                        self._metrics.epochs() >= self._epochs):
             self._checkpoint.new()
             self.update_checkpoint(self._checkpoint)
             self._checkpoint.commit()
@@ -320,15 +324,13 @@ class Trainer(EnforceOverrides):
             loss += aux_weight * lossfn(aux_logits, y)
         return loss
 
-    def _get_droppath_module(self)->Optional[nn.Module]:
+    def _get_droppath_module(self) -> Optional[nn.Module]:
         m = self.model
         if hasattr(self.model, 'module'): # for data parallel model
             m = self.model.module
-        if hasattr(m, 'drop_path_prob'):
-            return m
-        return None
+        return m if hasattr(m, 'drop_path_prob') else None
 
-    def _set_drop_path(self, epoch:int, epochs:int)->None:
+    def _set_drop_path(self, epoch:int, epochs:int) -> None:
         if self._drop_path_prob and self._droppath_module is not None:
             drop_prob = self._drop_path_prob * epoch / epochs
             # set value as property in model (it will be used by forward())
@@ -340,6 +342,6 @@ class Trainer(EnforceOverrides):
             if hasattr(m, 'drop_path_prob'):
                 m.drop_path_prob(drop_prob)
             else:
-                raise RuntimeError('Drop path value {} was specified but model'
-                                   ' does not have drop_path_prob() method'\
-                                       .format(self._drop_path_prob))
+                raise RuntimeError(
+                    f'Drop path value {self._drop_path_prob} was specified but model does not have drop_path_prob() method'
+                )

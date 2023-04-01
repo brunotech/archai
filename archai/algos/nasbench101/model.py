@@ -60,7 +60,7 @@ class Network(nn.Module):
         self._initialize_weights()
 
     def forward(self, x):
-        for _, layer in enumerate(self.layers):
+        for layer in self.layers:
             x = layer(x)
         out = torch.mean(x, (2, 3))
         out = self.classifier(out)
@@ -143,19 +143,15 @@ class Cell(nn.Module):
             assert self.spec.matrix[0, self.num_vertices-1]
             outputs = self.input_op[self.num_vertices-1](tensors[0])
         else:
-            if len(out_concat) == 1: # perf optimization
-                outputs = out_concat[0]
-            else:
-                outputs = torch.cat(out_concat, 1)
-
+            outputs = out_concat[0] if len(out_concat) == 1 else torch.cat(out_concat, 1)
             # if nput is also connected to output than apply output vertex operation
             # and then do sum with concatenated tensor
             if self.spec.matrix[0, self.num_vertices-1]:
                 outputs += self.input_op[self.num_vertices-1](tensors[0])
 
-            #if self.spec.matrix[0, self.num_vertices-1]:
-            #    out_concat.append(self.input_op[self.num_vertices-1](tensors[0]))
-            #outputs = sum(out_concat) / len(out_concat)
+                #if self.spec.matrix[0, self.num_vertices-1]:
+                #    out_concat.append(self.input_op[self.num_vertices-1](tensors[0]))
+                #outputs = sum(out_concat) / len(out_concat)
 
         return outputs
 

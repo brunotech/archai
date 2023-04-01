@@ -64,11 +64,7 @@ class Cell(ArchModule, EnforceOverrides):
             # TODO: Current assumption is that each edge has k channel
             #   output so node output is k channel as well
             #   This won't allow for arbitrary edges.
-            if len(node):
-                o = sum(edge(states) for edge in node)
-            else:
-                # support zero edges node by assuming zero op from last state
-                o = states[-1] + 0.0
+            o = sum(edge(states) for edge in node) if len(node) else states[-1] + 0.0
             states.append(o)
 
         # TODO: Below assumes same shape except for channels but this won't

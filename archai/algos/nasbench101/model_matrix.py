@@ -25,7 +25,7 @@ def prune(model_matrix:np.ndarray, vertex_ops:List[str]):
       raise ValueError('model_matrix must be upper triangular')
 
     # DFS forward from input
-    visited_from_input = set([0])
+    visited_from_input = {0}
     frontier = [0]
     while frontier:
         top = frontier.pop()
@@ -35,11 +35,11 @@ def prune(model_matrix:np.ndarray, vertex_ops:List[str]):
                 frontier.append(v)
 
     # DFS backward from output
-    visited_from_output = set([num_vertices - 1])
+    visited_from_output = {num_vertices - 1}
     frontier = [num_vertices - 1]
     while frontier:
         top = frontier.pop()
-        for v in range(0, top):
+        for v in range(top):
             if model_matrix[v, top] and v not in visited_from_output:
                 visited_from_output.add(v)
                 frontier.append(v)
@@ -69,7 +69,7 @@ def _is_upper_triangular(model_matrix:np.ndarray):
     # TODO: just use np.allclose(mat, np.triu(mat))
     """True if matrix is 0 on diagonal and below."""
     for src in range(np.shape(model_matrix)[0]):
-        for dst in range(0, src + 1):
+        for dst in range(src + 1):
             if model_matrix[src, dst] != 0:
                 return False
 

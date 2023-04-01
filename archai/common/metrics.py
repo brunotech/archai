@@ -224,25 +224,15 @@ class Metrics:
         return self.run_metrics.cur_epoch()
 
     def reduce_min(self, val):
-        if not self._apex:
-            return val
-        return self._apex.reduce(val, op='min')
+        return self._apex.reduce(val, op='min') if self._apex else val
     def reduce_max(self, val):
-        if not self._apex:
-            return val
-        return self._apex.reduce(val, op='max')
+        return self._apex.reduce(val, op='max') if self._apex else val
     def reduce_sum(self, val):
-        if not self._apex:
-            return val
-        return self._apex.reduce(val, op='sum')
+        return self._apex.reduce(val, op='sum') if self._apex else val
     def reduce_mean(self, val):
-        if not self._apex:
-            return val
-        return self._apex.reduce(val, op='mean')
-    def is_dist(self)->bool:
-        if not self._apex:
-            return False
-        return self._apex.is_dist()
+        return self._apex.reduce(val, op='mean') if self._apex else val
+    def is_dist(self) -> bool:
+        return self._apex.is_dist() if self._apex else False
 
     def best_train_top1(self)->float:
         return self.run_metrics.best_epoch()[0].top1.avg
@@ -284,10 +274,7 @@ class Accumulator:
         newone = Accumulator()
         for key, value in self.items():
             if isinstance(other, str):
-                if other != key:
-                    newone[key] = value / self[other]
-                else:
-                    newone[key] = value
+                newone[key] = value / self[other] if other != key else value
             else:
                 newone[key] = value / other
         return newone
@@ -357,16 +344,16 @@ class RunMetrics:
     def cur_epoch(self)->EpochMetrics:
         return self.epochs_metrics[self.epoch]
 
-    def best_epoch(self)->Tuple[EpochMetrics, Optional[EpochMetrics],
+    def best_epoch(self) -> Tuple[EpochMetrics, Optional[EpochMetrics],
                                 Optional[EpochMetrics]]: # [train, val, test]
         best_train = max(self.epochs_metrics, key=lambda e:e.top1.avg)
 
         best_val = max(self.epochs_metrics,
             key=lambda e:e.val_metrics.top1.avg if e.val_metrics else -1)
-        best_val = best_val.val_metrics if best_val.val_metrics else None
+        best_val = best_val.val_metrics or None
 
         best_test = self.test_metrics.run_metrics.epochs_metrics[-1] \
-                    if self.test_metrics else None
+                        if self.test_metrics else None
 
         return best_train, best_val, best_test
 

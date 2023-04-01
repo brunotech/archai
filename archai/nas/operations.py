@@ -172,9 +172,7 @@ class PoolBN(Op):
 
     @overrides
     def forward(self, input):
-        out = self.pool(input)
-        #out = self.bn(out)
-        return out
+        return self.pool(input)
 
 class SkipConnect(Op):
     def __init__(self, op_desc:OpDesc, affine) -> None:
@@ -318,8 +316,7 @@ class MBConvModule(nn.Module):
 
     @overrides
     def forward(self, input):
-        out = self.op(input)
-        return out 
+        return self.op(input) 
 
 class MBConv(Op):
     """ Inverted residual block, informally known as MBConv
@@ -339,8 +336,7 @@ class MBConv(Op):
 
     @overrides
     def forward(self, input):
-        out = self.op(input)
-        return out 
+        return self.op(input) 
 
 class SepConv(Op):
     """ Depthwise separable conv
@@ -734,7 +730,7 @@ class DropPath_(nn.Module):
         self.p = p
 
     def extra_repr(self):
-        return 'p={}, inplace'.format(self.p)
+        return f'p={self.p}, inplace'
 
     @overrides
     def forward(self, x):

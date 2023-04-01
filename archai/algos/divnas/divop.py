@@ -115,14 +115,12 @@ class DivOp(Op):
             # as we don't consider it
             activs = activs[:-1]
             self._batch_activs = [t.cpu().detach().numpy() for t in activs]
-            
-        if self._alphas:
-            asm = F.softmax(self._alphas[0], dim=0)
-            result = sum(w * op(x) for w, op in zip(asm, self._ops))
-        else:
-            result = sum(op(x) for op in self._ops)
 
-        return result
+        if not self._alphas:
+            return sum(op(x) for op in self._ops)
+
+        asm = F.softmax(self._alphas[0], dim=0)
+        return sum(w * op(x) for w, op in zip(asm, self._ops))
 
     @overrides
     def ops(self)->Iterator[Tuple['Op', float]]: # type: ignore

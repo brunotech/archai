@@ -21,13 +21,11 @@ class OptionalParameterList(nn.ParameterList):
         for k, p in self._parameters.items():
             if p is not None:
                 size_str = "x".join(str(size) for size in p.size())
-                device_str = "" if not p.is_cuda else " (GPU {})".format(p.get_device())
-                parastr = "Parameter containing: [{} of size {}{}]".format(torch.typename(p), size_str, device_str)
-                child_lines.append("  (" + str(k) + "): " + parastr)
+                device_str = f" (GPU {p.get_device()})" if p.is_cuda else ""
+                parastr = f"Parameter containing: [{torch.typename(p)} of size {size_str}{device_str}]"
+                child_lines.append(f"  ({str(k)}): {parastr}")
 
-        tmpstr = "\n".join(child_lines)
-
-        return tmpstr
+        return "\n".join(child_lines)
 
 
 class ProjectedAdaptiveLogSoftmax(nn.Module):
@@ -63,11 +61,7 @@ class ProjectedAdaptiveLogSoftmax(nn.Module):
             self.cluster_weight = nn.Parameter(torch.zeros(self.n_clusters, self.d_embed))
             self.cluster_bias = nn.Parameter(torch.zeros(self.n_clusters))
 
-        if not emb_weights:
-            self.out_weights = nn.ParameterList()
-        else:
-            self.out_weights = emb_weights
-
+        self.out_weights = emb_weights or nn.ParameterList()
         self.out_biases = nn.ParameterList()
         self.out_projs = OptionalParameterList()
         self.out_shared_projs = emb_projs
@@ -75,14 +69,10 @@ class ProjectedAdaptiveLogSoftmax(nn.Module):
         # Core logic for handling different dividents
         if div_val == 1:
             for i in range(len(self.cutoffs)):
-                if d_model != d_embed:
-                    if tie_projs[i]:
-                        self.out_projs.append(None)
-                    else:
-                        self.out_projs.append(nn.Parameter(torch.FloatTensor(d_model, d_embed)))
-                else:
+                if d_model != d_embed and tie_projs[i] or d_model == d_embed:
                     self.out_projs.append(None)
-
+                else:
+                    self.out_projs.append(nn.Parameter(torch.FloatTensor(d_model, d_embed)))
             if not emb_weights:
                 self.out_weights.append(nn.Parameter(torch.zeros(vocab_size, d_embed)))
 
@@ -114,12 +104,9 @@ class ProjectedAdaptiveLogSoftmax(nn.Module):
         proj: torch.FloatTensor,
     ) -> torch.FloatTensor:
         if proj is None:
-            logits = F.linear(inputs, weight, bias=bias)
-        else:
-            inputs_proj = F.linear(inputs, proj.t().contiguous())
-            logits = F.linear(inputs_proj, weight, bias=bias)
-
-        return logits
+            return F.linear(inputs, weight, bias=bias)
+        inputs_proj = F.linear(inputs, proj.t().contiguous())
+        return F.linear(inputs_proj, weight, bias=bias)
 
     def _get_shared_proj(self, idx: int) -> Union[None, torch.FloatTensor]:
         if self.tie_projs[idx]:

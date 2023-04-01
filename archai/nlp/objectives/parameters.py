@@ -32,11 +32,11 @@ class TotalParamsProxy(Objective):
 
     @overrides
     def evaluate(self, model: ArchaiModel, dataset: DatasetProvider, budget: Optional[float] = None) -> float:
-        total_params = sum(
-            param.numel() for param in model.arch.parameters() if not self.trainable_only or param.requires_grad
+        return sum(
+            param.numel()
+            for param in model.arch.parameters()
+            if not self.trainable_only or param.requires_grad
         )
-
-        return total_params
 
 
 class NonEmbeddingParamsProxy(Objective):

@@ -54,10 +54,7 @@ class AdaptiveEmbedding(nn.Module):
                 self.emb_layers.append(nn.Embedding(d_out_i, d_embed_i))
                 self.emb_projs.append(nn.Parameter(torch.zeros(d_model, d_embed_i)))
 
-        if fp16:
-            self.dtype = torch.float16
-        else:
-            self.dtype = torch.float32
+        self.dtype = torch.float16 if fp16 else torch.float32
 
     def forward(self, inputs: torch.FloatTensor) -> torch.FloatTensor:
         if self.div_val == 1:

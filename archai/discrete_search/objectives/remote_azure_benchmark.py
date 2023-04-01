@@ -52,8 +52,10 @@ class RemoteAzureBenchmarkObjective(AsyncObjective):
         """
         # TODO: Make this class more general / less pipeline-specific
 
-        input_shapes = [input_shape] if isinstance(input_shape, tuple) else input_shape        
-        self.sample_input = tuple([torch.rand(*input_shape) for input_shape in input_shapes])
+        input_shapes = [input_shape] if isinstance(input_shape, tuple) else input_shape
+        self.sample_input = tuple(
+            torch.rand(*input_shape) for input_shape in input_shapes
+        )
         self.blob_container_name = blob_container_name
         self.blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
@@ -61,7 +63,7 @@ class RemoteAzureBenchmarkObjective(AsyncObjective):
         self.table_service_client = TableServiceClient.from_connection_string(
             connection_string, logging_enable=False, logging_level='ERROR'
         )
-        
+
         # Changes the Azure logging level to ERROR to avoid unnecessary output
         logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy')
         logger.setLevel(logging.ERROR)
@@ -71,7 +73,7 @@ class RemoteAzureBenchmarkObjective(AsyncObjective):
         self.overwrite = overwrite
         self.max_retries = max_retries
         self.retry_interval = retry_interval
-        self.onnx_export_kwargs = onnx_export_kwargs or dict()
+        self.onnx_export_kwargs = onnx_export_kwargs or {}
 
         # Architecture list
         self.archids = []
@@ -112,7 +114,7 @@ class RemoteAzureBenchmarkObjective(AsyncObjective):
             'RowKey': rowkey_id
         }
 
-        entity.update(entity_dict)
+        entity |= entity_dict
         return self.table_client.upsert_entity(entity, mode=UpdateMode.REPLACE)
 
     @overrides

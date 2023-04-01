@@ -77,7 +77,7 @@ def save_checkpoint(
         "trainer_state": trainer_state,
     }
 
-    checkpoint_name = prefix + "checkpoint-last.pt"
+    checkpoint_name = f"{prefix}checkpoint-last.pt"
 
     with distributed_utils.sync_workers() as rank:
         checkpoint_path = os.path.join(output_dir, checkpoint_name)
@@ -87,14 +87,14 @@ def save_checkpoint(
             torch.save(state, checkpoint_path)
 
             if is_best_model:
-                checkpoint_step_name = prefix + "checkpoint-best.pt"
+                checkpoint_step_name = f"{prefix}checkpoint-best.pt"
                 checkpoint_step_path = os.path.join(output_dir, checkpoint_step_name)
 
                 logger.info(f"Saving checkpoint: {checkpoint_step_path}")
                 shutil.copy(checkpoint_path, checkpoint_step_path)
 
             if save_all_checkpoints:
-                checkpoint_step_name = prefix + f"checkpoint-{trainer_state['step']}.pt"
+                checkpoint_step_name = f"{prefix}checkpoint-{trainer_state['step']}.pt"
                 checkpoint_step_path = os.path.join(output_dir, checkpoint_step_name)
 
                 logger.info(f"Saving checkpoint: {checkpoint_step_path}")
@@ -236,10 +236,7 @@ class NvidiaTrainer:
 
         scheduler_name = self.args.lr_qat_scheduler_type if self.args.qat else self.args.lr_scheduler_type
         if scheduler_name == "cosine":
-            if self.args.lr_scheduler_max_steps:
-                max_steps = self.args.lr_scheduler_max_steps
-            else:
-                max_steps = self.args.max_steps
+            max_steps = self.args.lr_scheduler_max_steps or self.args.max_steps
             self.scheduler = optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer, max_steps - self.args.lr_scheduler_warmup_steps, eta_min=self.args.lr_scheduler_min_lr
             )
@@ -387,10 +384,7 @@ class NvidiaTrainer:
 
             if self.args.fp16:
                 self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-            else:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
-
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.max_grad_norm)
             if self.args.fp16:
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
@@ -404,9 +398,8 @@ class NvidiaTrainer:
                     curr_lr = self.args.learning_rate * step / self.args.lr_scheduler_warmup_steps
                     self.optimizer.param_groups[0]["lr"] = curr_lr
 
-                else:
-                    if self.args.lr_scheduler_type == "cosine":
-                        self.scheduler.step(step - self.args.lr_scheduler_warmup_steps)
+                elif self.args.lr_scheduler_type == "cosine":
+                    self.scheduler.step(step - self.args.lr_scheduler_warmup_steps)
             elif self.args.lr_scheduler_type in ["inv_sqrt", "cyclic_cosine"]:
                 self.scheduler.step(step)
 
@@ -584,7 +577,7 @@ class NvidiaTrainer:
         eval_loss, n_tokens = 0.0, 0
         start_time = time.time()
         with torch.no_grad():
-            for _, (input_ids, _, _, warm) in enumerate(eval_dataloader):
+            for input_ids, _, _, warm in eval_dataloader:
                 loss = self.model(input_ids, labels=input_ids)[0]
                 tokens = input_ids.numel()
                 if warm:
@@ -614,14 +607,12 @@ class NvidiaTrainer:
 
         eval_loss, eval_time = self.evaluation_step(eval_dataloader)
 
-        eval_metrics = {
+        return {
             "eval_time": eval_time,
             "eval_loss": eval_loss,
             "eval_ppl": math.exp(eval_loss),
             "eval_bpc": eval_loss / math.log(2),
         }
-
-        return eval_metrics
 
     def fine_tune_qat(self, model: Optional[torch.nn.Module] = None, checkpoint_file_path: Optional[str] = "") -> None:
         """Fine-tune a model with QAT.

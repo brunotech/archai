@@ -28,10 +28,7 @@ class OnnxDynamicObserver:
 
         assert dtype in (torch.quint8, torch.qint8)
 
-        if dtype == torch.quint8:
-            self.qmin, self.qmax = 0, 255
-        else:
-            self.qmin, self.qmax = -128, 127
+        self.qmin, self.qmax = (0, 255) if dtype == torch.quint8 else (-128, 127)
 
     def __call__(self, x: torch.Tensor) -> None:
         """Performs a call to set minimum and maximum tensor values.

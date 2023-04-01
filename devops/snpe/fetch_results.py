@@ -14,5 +14,5 @@ if os.path.isdir(output_dir):
     rmtree(output_dir)
 os.makedirs(output_dir)
 
-print("Found {} input files".format(len(files)))
+print(f"Found {len(files)} input files")
 download_results(files, 0, output_dir)

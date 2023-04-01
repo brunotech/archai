@@ -37,9 +37,7 @@ def parse_args() -> argparse.Namespace:
         help="Configuration name of the dataset to use (via the datasets library).",
     )
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

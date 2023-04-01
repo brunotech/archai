@@ -70,8 +70,8 @@ def _train_model(conf, dataroot, augment, val_ratio, val_fold, save_path=None,
         save_path=save_path, only_eval=only_eval)
     return model_type, val_fold, result
 
-def _get_model_filepath(dataset, model, tag)->Optional[str]:
-    filename = '%s_%s_%s.model' % (dataset, model, tag)
+def _get_model_filepath(dataset, model, tag) -> Optional[str]:
+    filename = f'{dataset}_{model}_{tag}.model'
     return expdir_abspath(filename)
 
 def _train_no_aug(conf):
@@ -122,12 +122,11 @@ def _train_no_aug(conf):
             epochs_per_cv = OrderedDict()
             for cv_idx in range(cv_num):
                 try:
-                    if os.path.exists(save_paths[cv_idx]):
-                        latest_ckpt = torch.load(save_paths[cv_idx])
-                        if 'epoch' not in latest_ckpt:
-                            epochs_per_cv['cv%d' % (cv_idx + 1)] = epochs
-                            continue
-                    else:
+                    if not os.path.exists(save_paths[cv_idx]):
+                        continue
+                    latest_ckpt = torch.load(save_paths[cv_idx])
+                    if 'epoch' not in latest_ckpt:
+                        epochs_per_cv['cv%d' % (cv_idx + 1)] = epochs
                         continue
                     epochs_per_cv['cv%d' % (cv_idx+1)] = latest_ckpt['epoch']
                 except Exception as e:
@@ -172,9 +171,10 @@ def search(conf):
     resume = conf['resume']
     # endregion
 
-    ray.init(redis_address=redis_ip,
-        # allocate all GPUs on local node if cluster is not specified
-        num_gpus=torch.cuda.device_count() if not redis_ip else None)
+    ray.init(
+        redis_address=redis_ip,
+        num_gpus=None if redis_ip else torch.cuda.device_count(),
+    )
 
     # first train with no aug
     _train_no_aug(conf)
@@ -194,8 +194,9 @@ def search(conf):
     space = {}
     for i in range(num_policy):
         for j in range(num_op):
-            space['policy_%d_%d' % (i, j)] = hp.choice('policy_%d_%d' %
-                (i, j), list(range(0, len(ops))))
+            space['policy_%d_%d' % (i, j)] = hp.choice(
+                'policy_%d_%d' % (i, j), list(range(len(ops)))
+            )
             space['prob_%d_%d' % (i, j)] = hp.uniform('prob_%d_ %d' %
                 (i, j), 0.0, 1.0)
             space['level_%d_%d' % (i, j)] = hp.uniform('level_%d_ %d' %

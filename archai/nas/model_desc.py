@@ -240,10 +240,10 @@ class ModelDesc:
         self.reset_cells(cell_descs, aux_tower_descs)
 
     def reset_cells(self, cell_descs:List[CellDesc],
-                    aux_tower_descs:List[Optional[AuxTowerDesc]])->None:
+                    aux_tower_descs:List[Optional[AuxTowerDesc]]) -> None:
         assert len(cell_descs) == len(aux_tower_descs)
         # every cell should have unique ID so we can tell where arch params are shared
-        assert len(set(c.id for c in cell_descs)) == len(cell_descs)
+        assert len({c.id for c in cell_descs}) == len(cell_descs)
 
         self._cell_descs = cell_descs
         self.aux_tower_descs = aux_tower_descs
@@ -260,8 +260,8 @@ class ModelDesc:
     def cell_descs(self)->List[CellDesc]:
         return self._cell_descs
 
-    def cell_type_count(self, cell_type:CellType)->int:
-        return sum(1 for c in self._cell_descs if c.cell_type==cell_type)
+    def cell_type_count(self, cell_type:CellType) -> int:
+        return sum(c.cell_type == cell_type for c in self._cell_descs)
 
     def clone(self)->'ModelDesc':
         return copy.deepcopy(self)
@@ -315,12 +315,12 @@ class ModelDesc:
         return str(pathlib.Path(desc_filepath).with_suffix('.pth'))
 
     @staticmethod
-    def load(filename:str, load_trainables=False)->'ModelDesc':
+    def load(filename:str, load_trainables=False) -> 'ModelDesc':
         filename = utils.full_path(filename)
         if not filename or not os.path.exists(filename):
-            raise RuntimeError("Model description file is not found."
-                "Typically this file should be generated from the search."
-                "Please copy this file to '{}'".format(filename))
+            raise RuntimeError(
+                f"Model description file is not found.Typically this file should be generated from the search.Please copy this file to '{filename}'"
+            )
 
         logger.info({'final_desc_filename': filename})
         with open(filename, 'r') as f:

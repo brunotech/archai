@@ -22,9 +22,9 @@ if __name__ == '__main__':
     elapsed = time.time() - t
 
     logger.info('training done.')
-    logger.info('model: %s' % conf['autoaug']['model'])
-    logger.info('augmentation: %s' % conf['autoaug']['loader']['aug'])
+    logger.info(f"model: {conf['autoaug']['model']}")
+    logger.info(f"augmentation: {conf['autoaug']['loader']['aug']}")
     logger.info('\n' + json.dumps(result, indent=4))
     logger.info('elapsed time: %.3f Hours' % (elapsed / 3600.))
     logger.info('top1 error in testset: %.4f' % (1. - result['top1_test']))
-    logger.info('Save path: %s' % save_path)
+    logger.info(f'Save path: {save_path}')

@@ -67,13 +67,12 @@ class Divnas_Cell():
     def update_covs(self):
         assert self._collect_activations
 
-        for _, node in enumerate(self._cell.dag):
-            # TODO: convert to explicit ordering
-            all_activs = []
-            for j, edge in enumerate(node):
-                if type(edge._op) == self._edgeoptype:
-                    activs = edge._op.activations
-                    all_activs.append(activs)
+        for node in self._cell.dag:
+            all_activs = [
+                edge._op.activations
+                for edge in node
+                if type(edge._op) == self._edgeoptype
+            ]
             # update covariance matrix    
             activs_converted = self._convert_activations(all_activs)
             new_cov = aa.compute_rbf_kernel_covariance(activs_converted, sigma=self._sigma)
@@ -82,7 +81,7 @@ class Divnas_Cell():
 
 
     def clear_collect_activations(self):
-        for _, node in enumerate(self._cell.dag):            
+        for node in self._cell.dag:
             for edge in node:
                 if hasattr(edge._op, 'PRIMITIVES') and type(edge._op) == self._edgeoptype:
                     edge._op.collect_activations = False
@@ -93,7 +92,7 @@ class Divnas_Cell():
         self._node_covs = {}
 
 
-    def _convert_activations(self, all_activs:List[List[np.array]])->List[np.array]:
+    def _convert_activations(self, all_activs:List[List[np.array]]) -> List[np.array]:
         ''' Converts to the format needed by covariance computing functions
         Input all_activs: List[List[np.array]]. Outer list len is num_edges. 
         Inner list is of num_ops length. Each element in inner list is [batch_size, x, y, z] '''
@@ -103,7 +102,7 @@ class Divnas_Cell():
             assert num_ops == len(activs)
 
         all_edge_list = []
-        
+
         for edge in all_activs:
             obsv_dict = defaultdict(list)
             # assumption edge_np will be (num_ops, batch_size, x, y, z)
@@ -115,7 +114,7 @@ class Divnas_Cell():
                     obsv_dict[op].append(feat)
 
             feature_list = [*range(num_ops)]
-            for key in obsv_dict.keys():
+            for key in obsv_dict:
                 feat = np.array(obsv_dict[key])
                 feature_list[key] = feat
 

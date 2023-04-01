@@ -70,10 +70,11 @@ class TransfoXLOnnxModel(OnnxModel):
         if graph_input.name in input_name_to_nodes:
             nodes = input_name_to_nodes[graph_input.name]
 
-            nodes_not_cast = [node for node in nodes if node.op_type != "Cast"]
-            if nodes_not_cast:
+            if nodes_not_cast := [
+                node for node in nodes if node.op_type != "Cast"
+            ]:
                 node_name = self.create_node_name("Cast")
-                output_name = node_name + "_" + graph_input.name
+                output_name = f"{node_name}_{graph_input.name}"
                 new_value_info = graph.value_info.add()
                 new_value_info.CopyFrom(graph_input)
                 new_value_info.name = output_name
@@ -212,8 +213,6 @@ class TransfoXLOnnxModel(OnnxModel):
                     reshape_before_expand = reshape_path[-2]
                     shape_value = self.get_constant_value(reshape_before_expand.input[1])
 
-                    slice_node = reshape_path[-1]
-
                     if (
                         expand_shape_value is not None
                         and shape_value is not None
@@ -221,6 +220,8 @@ class TransfoXLOnnxModel(OnnxModel):
                         and len(shape_value) == 1
                         and expand_shape_value[1] == shape_value[0]
                     ):
+                        slice_node = reshape_path[-1]
+
                         node.input[0] = slice_node.output[0]
 
         if nodes_to_remove:
@@ -273,19 +274,21 @@ class TransfoXLOnnxModel(OnnxModel):
                     output_name_to_node,
                 )
 
-                if parent_nodes is not None:
-                    if parent_nodes[-1].input[0] == self.graph().input[0].name:
-                        attention_node = helper.make_node(
-                            "Attention",
-                            inputs=node.input[0 : len(node.input) - 1],
-                            outputs=node.output,
-                            name=node.name + "_remove_mask",
-                        )
-                        attention_node.domain = "com.microsoft"
-                        attention_node.attribute.extend([helper.make_attribute("num_heads", self.num_heads)])
+                if (
+                    parent_nodes is not None
+                    and parent_nodes[-1].input[0] == self.graph().input[0].name
+                ):
+                    attention_node = helper.make_node(
+                        "Attention",
+                        inputs=node.input[:-1],
+                        outputs=node.output,
+                        name=f"{node.name}_remove_mask",
+                    )
+                    attention_node.domain = "com.microsoft"
+                    attention_node.attribute.extend([helper.make_attribute("num_heads", self.num_heads)])
 
-                        self.add_node(attention_node, self.get_graph_by_node(attention_node).name)
-                        nodes_to_remove.append(node)
+                    self.add_node(attention_node, self.get_graph_by_node(attention_node).name)
+                    nodes_to_remove.append(node)
 
         self.remove_nodes(nodes_to_remove)
 

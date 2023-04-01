@@ -90,7 +90,9 @@ class BbpeVocab(VocabBase):
         self.pad_vocab_size = pad_vocab_size  # vocab_size multiple of 8
         self.pad = 8
         self.padded_vocab_size = (
-            self.vocab_size if not self.pad_vocab_size else (self.vocab_size + self.pad - 1) // self.pad * self.pad
+            (self.vocab_size + self.pad - 1) // self.pad * self.pad
+            if self.pad_vocab_size
+            else self.vocab_size
         )
 
     @overrides
@@ -150,8 +152,16 @@ class BbpeVocab(VocabBase):
         self._finalize_tokenizer()
 
         # These IDs will be used to manually add BOS and EOS
-        self.bos_id = [] if not self._config.bos_token else [self.token_to_id(self._config.bos_token)]
-        self.eos_id = [] if not self._config.eos_token else [self.token_to_id(self._config.eos_token)]
+        self.bos_id = (
+            [self.token_to_id(self._config.bos_token)]
+            if self._config.bos_token
+            else []
+        )
+        self.eos_id = (
+            [self.token_to_id(self._config.eos_token)]
+            if self._config.eos_token
+            else []
+        )
 
         logger.debug(f"Tokenizer length: {len(self._tokenizer)}")
         logger.debug(f"Tokenizer file path: {self._tokenizer_filepath}")
@@ -255,7 +265,7 @@ class BbpeVocab(VocabBase):
             int(token_id) for token_id, _ in tokens_counter.most_common() if int(token_id) >= min_sort_id
         ]
 
-        t_map = [(new, old) for new, old in enumerate(sorted_ids)]
+        t_map = list(enumerate(sorted_ids))
         t_map.sort(key=lambda t: t[1])
         orig2sorted_ids = [t[0] for t in t_map]
 
@@ -266,7 +276,9 @@ class BbpeVocab(VocabBase):
         assert len(vocab_orig) == len(orig2sorted_ids)
         v_map = OrderedDict([(vocab, orig2sorted_ids[idx]) for vocab, idx in vocab_orig.items()])
 
-        utils.copy_file(self._tokenizer_filepath, self._tokenizer_filepath + ".unsorted.json")
+        utils.copy_file(
+            self._tokenizer_filepath, f"{self._tokenizer_filepath}.unsorted.json"
+        )
         tok_json["model"]["vocab"] = v_map
         with open(self._tokenizer_filepath, "w", encoding="utf-8") as f:
             f.write(json.dumps(tok_json, ensure_ascii=False, indent=2))
@@ -278,7 +290,7 @@ class BbpeVocab(VocabBase):
             vocab_size = len(self._tokenizer)
 
             self.padded_vocab_size = (vocab_size + self.pad - 1) // self.pad * self.pad
-            for i in range(0, self.padded_vocab_size - vocab_size):
+            for i in range(self.padded_vocab_size - vocab_size):
                 token = f"madeupword{i:09d}"
                 self._tokenizer.add_tokens([token])
 
@@ -296,10 +308,10 @@ class BbpeVocab(VocabBase):
         text = text.strip()
 
         # Does not add space for empty lines
-        if self._config.add_prefix_new_line and (text == "\n" or text == ""):
+        if self._config.add_prefix_new_line and text in {"\n", ""}:
             return "\n"
         if self._config.add_prefix_space:
-            text = " " + text
+            text = f" {text}"
         if self._config.add_prefix_new_line:
             text = "\n" + text
         if self._config.lower_case:

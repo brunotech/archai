@@ -16,7 +16,9 @@ class SeqOpt:
         self._num_items = num_items
 
         # initialize wmr copies
-        self._expert_algos = [Wmr(self._num_items, eps) for i in range(self._num_items)]
+        self._expert_algos = [
+            Wmr(self._num_items, eps) for _ in range(self._num_items)
+        ]
 
 
     def sample_sequence(self, with_replacement=False)->List[int]:
@@ -58,16 +60,15 @@ class SeqOpt:
         return is_descending
 
 
-    def _scale_minus_one_to_one(self, rewards:np.array)->np.array:
-        scaled = np.interp(rewards, (rewards.min(), rewards.max()), (-1, 1))
-        return scaled
+    def _scale_minus_one_to_one(self, rewards:np.array) -> np.array:
+        return np.interp(rewards, (rewards.min(), rewards.max()), (-1, 1))
 
-    def update(self, sel_list:List[int], compute_marginal_gain_func)->None:
+    def update(self, sel_list:List[int], compute_marginal_gain_func) -> None:
         """ In the full information case we will update 
         all expert copies according to the marginal benefits """
 
         # mother set
-        S = set([i for i in range(self._num_items)])
+        S = set(list(range(self._num_items)))
 
         reward_storage = []
 
@@ -82,7 +83,7 @@ class SeqOpt:
                 # covariance function needed
                 reward = compute_marginal_gain_func(item, sub_sel, S)
                 reward_vector.append(reward)
-            
+
             # update the expert algo copy for this slot
             scaled_rewards = self._scale_minus_one_to_one(np.array(reward_vector))
             self._expert_algos[slot_id].update(scaled_rewards)

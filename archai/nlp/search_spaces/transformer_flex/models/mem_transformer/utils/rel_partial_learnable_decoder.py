@@ -74,9 +74,7 @@ class RelPartialLearnableMultiHeadAttn(nn.Module):
         inputs_padded_shape = (inputs.size(1) + 1, inputs.size(0)) + inputs.size()[2:]
         inputs_padded = inputs_padded.view(*inputs_padded_shape)
 
-        output = inputs_padded[1:].view_as(inputs)
-
-        return output
+        return inputs_padded[1:].view_as(inputs)
 
     def forward(
         self,
@@ -104,7 +102,6 @@ class RelPartialLearnableMultiHeadAttn(nn.Module):
             head_wq, head_wk, head_wv = torch.chunk(heads_w, 3, dim=-1)
             head_wq = head_wq[-q_length:]
 
-            head_rk = self.r(r)
         else:
             if self.pre_lnorm:
                 w = self.layer_norm(w)
@@ -115,8 +112,7 @@ class RelPartialLearnableMultiHeadAttn(nn.Module):
 
             head_wq, head_wk, head_wv = torch.chunk(heads_w, 3, dim=-1)
 
-            head_rk = self.r(r)
-
+        head_rk = self.r(r)
         k_length = head_wk.size(0)
 
         # Changes the view according to required size
@@ -160,13 +156,7 @@ class RelPartialLearnableMultiHeadAttn(nn.Module):
             # Switches to a boolean mask
             attn_mask = attn_mask == 1
 
-            # Standard filling for 32-bit float precision
-            fill = -1e30
-
-            # If using 16-bit float precision, `fill` should be smaller
-            if next(self.parameters()).dtype == torch.float16:
-                fill = -65000
-
+            fill = -65000 if next(self.parameters()).dtype == torch.float16 else -1e30
             if attn_mask.dim() == 2:
                 attn_score = attn_score.float().masked_fill(attn_mask[None, :, :, None], fill).type_as(attn_score)
             elif attn_mask.dim() == 3:
@@ -275,6 +265,4 @@ class RelPartialLearnableDecoderLayer(nn.Module):
             output_attentions=output_attentions,
         )
 
-        output = [self.pos_ff(attn_output[0])] + attn_output[1:]
-
-        return output
+        return [self.pos_ff(attn_output[0])] + attn_output[1:]

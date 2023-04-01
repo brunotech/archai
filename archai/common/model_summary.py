@@ -20,7 +20,7 @@ def summary(model, input_size):
     return params_info
 
 def is_scaler(o):
-    return isinstance(o, Number) or isinstance(o, str) or o is None
+    return isinstance(o, (Number, str)) or o is None
 
 
 def get_tensor_stat(tensor):
@@ -160,9 +160,11 @@ def summary_string(model, input_size, dtype=torch.float32):
         total_params += summary[layer]["nb_params"]
 
         total_output = tuple(x+y for x,y in zip(total_output, summary[layer]["output"]))
-        if "trainable" in summary[layer]:
-            if summary[layer]["trainable"] == True:
-                trainable_params += summary[layer]["nb_params"]
+        if (
+            "trainable" in summary[layer]
+            and summary[layer]["trainable"] == True
+        ):
+            trainable_params += summary[layer]["nb_params"]
         summary_str += line_new + "\n"
 
     total_numel = total_params + total_output[1] + total_input[1]

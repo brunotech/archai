@@ -116,20 +116,19 @@ class Config(UserDict):
             else: # some other arg
                 i += 1
 
-    def to_dict(self)->dict:
-        return deep_update({}, self, lambda: dict()) # type: ignore
+    def to_dict(self) -> dict:
+        return deep_update({}, self, lambda: {})
 
     @staticmethod
-    def _update_section(section:'Config', path:List[str], val:Any, resolved_section:'Config')->int:
+    def _update_section(section:'Config', path:List[str], val:Any, resolved_section:'Config') -> int:
         for p in range(len(path)-1):
             sub_path = path[p]
-            if sub_path in resolved_section:
-                resolved_section = resolved_section[sub_path]
-                if not sub_path in section:
-                    section[sub_path] = Config(resolve_redirects=False)
-                section = section[sub_path]
-            else:
+            if sub_path not in resolved_section:
                 return 1 # path not found, ignore this
+            resolved_section = resolved_section[sub_path]
+            if sub_path not in section:
+                section[sub_path] = Config(resolve_redirects=False)
+            section = section[sub_path]
         key = path[-1] # final leaf node value
 
         if key in resolved_section:

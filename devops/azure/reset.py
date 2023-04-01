@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     if friendly_name == '*':
         a = input("Are you sure you want to reset everything (y o n)? ").strip().lower()
-        if a != 'y' and a != 'yes':
+        if a not in ['y', 'yes']:
             sys.exit(1)
         entities = get_all_status_entities()
 

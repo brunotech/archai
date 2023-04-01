@@ -38,10 +38,8 @@ _tb_writer: SummaryWriterAny = None
 _atexit_reg = False # is hook for atexit registered?
 
 
-def get_conf(conf:Optional[Config]=None)->Config:
-    if conf is not None:
-        return conf
-    return Config.get_inst()
+def get_conf(conf:Optional[Config]=None) -> Config:
+    return conf if conf is not None else Config.get_inst()
 
 def get_conf_common(conf:Optional[Config]=None)->Config:
     return get_conf(conf)['common']
@@ -325,7 +323,7 @@ def create_logger(conf:Config):
     if utils.is_main_process():
         logdir, log_suffix = expdir, ''
     else:
-        logdir, log_suffix = distdir, '_' + str(os.getpid())
+        logdir, log_suffix = distdir, f'_{str(os.getpid())}'
 
     # ensure folders
     os.makedirs(logdir, exist_ok=True)

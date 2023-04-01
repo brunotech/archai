@@ -42,5 +42,4 @@ class RandomBrightness(object):
 
     def __call__(self, *inputs):
         value = random.uniform(self.values[0], self.values[1])
-        outputs = Brightness(value)(*inputs)
-        return outputs
+        return Brightness(value)(*inputs)

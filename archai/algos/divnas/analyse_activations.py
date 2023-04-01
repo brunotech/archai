@@ -33,11 +33,10 @@ def create_submod_f(covariance:np.array)->Callable:
 def get_batch(feature_list, batch_size, i):
     start_row = batch_size * i
     end_row = start_row + batch_size
-    feats = [feat[start_row:end_row, :] for feat in feature_list]
-    return feats
+    return [feat[start_row:end_row, :] for feat in feature_list]
 
 
-def rbf(x:np.array, y:np.array, sigma=0.1)->np.array:
+def rbf(x:np.array, y:np.array, sigma=0.1) -> np.array:
     """ Computes the rbf kernel between two input vectors """
 
     # make sure that inputs are vectors
@@ -45,15 +44,17 @@ def rbf(x:np.array, y:np.array, sigma=0.1)->np.array:
     assert len(y.shape) == 1
 
     sq_euclidean = np.sum(np.square(x-y))
-    k = np.exp(-sq_euclidean/(2*sigma*sigma))
-    return k
+    return np.exp(-sq_euclidean/(2*sigma*sigma))
 
 
 def _compute_mi(cov_kernel:np.array, A:Set, V_minus_A:Set):
     sigma_A = cov_kernel[np.ix_(list(A), list(A))]
     sigma_V_minus_A = cov_kernel[np.ix_(list(V_minus_A), list(V_minus_A))]
-    I = 0.5 * np.log(np.linalg.det(sigma_A) * np.linalg.det(sigma_V_minus_A) / np.linalg.det(cov_kernel))
-    return I
+    return 0.5 * np.log(
+        np.linalg.det(sigma_A)
+        * np.linalg.det(sigma_V_minus_A)
+        / np.linalg.det(cov_kernel)
+    )
 
 
 def compute_brute_force_sol(cov_kernel:np.array, budget:int)->Tuple[Tuple[Any], float]:
@@ -79,11 +80,10 @@ def compute_brute_force_sol(cov_kernel:np.array, budget:int)->Tuple[Tuple[Any], 
 
 
 
-def compute_correlation(covariance:np.array)->np.array:
+def compute_correlation(covariance:np.array) -> np.array:
     variance = np.diag(covariance).reshape(-1, 1)
     stds = np.sqrt(np.matmul(variance, variance.T))
-    correlation = covariance / (stds + 1e-16)
-    return correlation
+    return covariance / (stds + 1e-16)
 
 
 def compute_covariance_offline(feature_list:List[np.array])->np.array:
@@ -131,7 +131,7 @@ def compute_rbf_kernel_covariance(feature_list:List[np.array], sigma=0.1)->np.ar
     return covariance
 
     
-def compute_euclidean_dist_quantiles(feature_list:List[np.array], subsamplefactor=1)->List[Tuple[float, float]]:
+def compute_euclidean_dist_quantiles(feature_list:List[np.array], subsamplefactor=1) -> List[Tuple[float, float]]:
     """ Compute quantile distances between feature pairs 
     feature_list: List of features each of shape: (num_samples, feature_dim)
     """
@@ -156,13 +156,10 @@ def compute_euclidean_dist_quantiles(feature_list:List[np.array], subsamplefacto
 
     quantiles = [i*0.1 for i in range(1, 10)]
     quant_vals = np.quantile(distances, quantiles)
-    quants = []
-    for quant, val in zip(quantiles, quant_vals.tolist()):
-        quants.append((quant, val))
-    return quants
+    return list(zip(quantiles, quant_vals.tolist()))
 
 
-def greedy_op_selection(covariance:np.array, k:int)->List[int]:
+def greedy_op_selection(covariance:np.array, k:int) -> List[int]:
     assert covariance.shape[0] == covariance.shape[1]
     assert len(covariance.shape) == 2
     assert k <= covariance.shape[0]
@@ -171,11 +168,8 @@ def greedy_op_selection(covariance:np.array, k:int)->List[int]:
     # to keep order information
     A_list = []
 
-    S = set()
-    for i in range(covariance.shape[0]):
-        S.add(i)
-    
-    for i in tqdm(range(k)):
+    S = set(range(covariance.shape[0]))
+    for _ in tqdm(range(k)):
         marginal_gains = []
         marginal_gain_ids = []
         for y in S - A:
@@ -189,22 +183,17 @@ def greedy_op_selection(covariance:np.array, k:int)->List[int]:
             if marg_gain > val:
                 val = marg_gain
                 argmax = marg_gain_id
-        
+
         A.add(argmax)
         A_list.append(argmax)
 
     return A_list
 
 
-def compute_marginal_gain(y:int, A:Set[int], S:Set[int], covariance:np.array)->float:
+def compute_marginal_gain(y:int, A:Set[int], S:Set[int], covariance:np.array) -> float:
 
-    if A:
-        A_copy = deepcopy(A)
-        A_copy.add(y)
-    else:
-        A_copy = set()
-        A_copy.add(y)
-
+    A_copy = deepcopy(A) if A else set()
+    A_copy.add(y)
     A_bar = S - A_copy
 
     sigma_y_sqr = covariance[y, y]
@@ -227,7 +216,7 @@ def compute_marginal_gain(y:int, A:Set[int], S:Set[int], covariance:np.array)->f
     return float(gain)
 
 
-def collect_features(rootfolder:str, subsampling_factor:int = 1)->Dict[str, List[np.array]]:
+def collect_features(rootfolder:str, subsampling_factor:int = 1) -> Dict[str, List[np.array]]:
     """ Walks the rootfolder for h5py files and loads them into the format
     required for analysis.
     
@@ -276,14 +265,14 @@ def collect_features(rootfolder:str, subsampling_factor:int = 1)->Dict[str, List
 
             num_ops = edge_activ_list[0].shape[0]
             feature_list = [np.zeros(1) for _ in range(num_ops)]
-            for key in obsv_dict.keys():
+            for key in obsv_dict:
                 feat = np.array(obsv_dict[key])
                 feature_list[key] = feat
 
             # removing none and skip_connect
             del feature_list[-1]
             del feature_list[2] 
-        
+
             all_edges_activs[edge_name] = feature_list
 
     return all_edges_activs
@@ -299,7 +288,7 @@ def plot_all_covs(covs_kernel, corr, primitives, axs):
         flat_axs[i].set_title(f'Kernel covariance sigma={quantile} quantile')
 
     sns.heatmap(corr, annot=True, fmt='.1g', cmap='coolwarm', xticklabels=primitives, yticklabels=primitives, ax=flat_axs[-1])
-    flat_axs[-1].set_title(f'Correlation')
+    flat_axs[-1].set_title('Correlation')
 
 def main():
 
@@ -335,10 +324,7 @@ def main():
     # edge_list = ['activations_node_3_edge_0', 'activations_node_3_edge_1', 'activations_node_3_edge_2', 'activations_node_3_edge_3', 'activations_node_3_edge_4']
     for name in edge_list:
         all_edges_list.extend(all_edges_activs[name])
-        for prim in PRIMITIVES:
-            all_names_list.append(name + '_' + prim) 
-
-        
+        all_names_list.extend(f'{name}_{prim}' for prim in PRIMITIVES)
     # compute covariance like usual
     # cov = compute_covariance_offline(all_edges_list)
     # corr = compute_correlation(cov)
@@ -370,7 +356,6 @@ def main():
         print(f'Greedy op {i} is {all_names_list[op_index]}')
 
     greedy_budget = greedy_ops[:budget]
-     # find MI of the greedy solution
     V = set(range(cov_kernel.shape[0]))
     A_greedy = set(greedy_budget)
     V_minus_A_greedy = V - A_greedy
@@ -410,7 +395,6 @@ def main():
     # check that it is close to greedy and or bruteforce
     budget = 4
     sel_list = sel_list[:budget]
-     # find MI of the greedy solution
     V = set(range(num_items))
     A_seqopt = set(sel_list)
     V_minus_A_seqopt = V - A_seqopt

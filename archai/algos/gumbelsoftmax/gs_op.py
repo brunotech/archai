@@ -101,10 +101,7 @@ class GsOp(Op):
                                 children_ins = children_ins
                                )
 
-        max_alpha = 0.0
-        if selected_alphas:
-            max_alpha = max(selected_alphas)
-        
+        max_alpha = max(selected_alphas, default=0.0)
         return final_op_desc, max_alpha
 
     @overrides

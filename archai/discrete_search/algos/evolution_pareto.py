@@ -64,16 +64,20 @@ class EvolutionParetoSearch(Searcher):
 
     def filter_population(self, population: List[ArchaiModel]):
         ''' Filter the population based on the objectives constraints '''
-        if not self.obj_valid_ranges:
-            return population
-
-        return [
-            p for p in population 
-            if all(
-                self.obj_valid_ranges[obj_idx][0] <= score <= self.obj_valid_ranges[obj_idx][1]
-                for obj_idx, score in enumerate(p.metadata['objective'])
-            )
-        ]
+        return (
+            [
+                p
+                for p in population
+                if all(
+                    self.obj_valid_ranges[obj_idx][0]
+                    <= score
+                    <= self.obj_valid_ranges[obj_idx][1]
+                    for obj_idx, score in enumerate(p.metadata['objective'])
+                )
+            ]
+            if self.obj_valid_ranges
+            else population
+        )
 
     def mutate_parents(self, parents:List[ArchaiModel],
                        mutations_per_parent: int = 1,
@@ -103,14 +107,18 @@ class EvolutionParetoSearch(Searcher):
                 mutated_model = self.search_space.mutate(p)
                 mutated_model.metadata['parent'] = p.archid
 
-                mutated_models = [mutated_model] if not isinstance(mutated_model, list) else mutated_model
+                mutated_models = (
+                    mutated_model
+                    if isinstance(mutated_model, list)
+                    else [mutated_model]
+                )
 
                 for nbr in mutated_models:
                     if nbr.archid not in self.evaluated_architectures:
                         nbr.metadata['generation'] = self.iter_num
                         candidates[nbr.archid] = nbr
                 nb_tries += 1
-            
+
             # TODO: Figure out a way to use crowd sorting here
             # if candidates and self.crowd_sorting and self.crowd_sorting['mutation']:
             #     candidates_list = list(candidates.items())
@@ -125,7 +133,7 @@ class EvolutionParetoSearch(Searcher):
             #     for idx in np.argsort(-crowd_dist, axis=None)[mutations_per_parent:]:
             #         del candidates[candidates_list[idx][0]]
 
-            mutations.update(candidates)
+            mutations |= candidates
 
         return list(mutations.values())
 
@@ -136,9 +144,7 @@ class EvolutionParetoSearch(Searcher):
         if len(parents) >= 2:
             pairs = [random.sample(parents, 2) for _ in range(num_crossovers)]
             for p1, p2 in pairs:
-                child = self.search_space.crossover([p1, p2])
-
-                if child:
+                if child := self.search_space.crossover([p1, p2]):
                     if child.archid not in children_hashes and child.archid not in self.evaluated_architectures:
                         child.metadata['generation'] = self.iter_num
                         child.metadata['parents'] = f'{p1.archid},{p2.archid}'

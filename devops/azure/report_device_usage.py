@@ -40,7 +40,7 @@ def report(report_start, report_end):
         return
 
     # column headings
-    print("date,{}".format(",".join([k for k in devices])))
+    print(f'date,{",".join(list(devices))}')
 
     start = datetime.datetime(first.year, first.month, first.day, 0, 0, 0, 0, first.tzinfo)
     last = datetime.datetime(last.year, last.month, last.day, 23, 59, 59, 999999, first.tzinfo)
@@ -48,18 +48,15 @@ def report(report_start, report_end):
         du = []
         end = start + datetime.timedelta(days=1)
         total = (end - start).total_seconds()
-        for k in devices:
-            s = devices[k]
+        for s in devices.values():
             used = 0
             for d in s:
                 ds = d[0]
                 de = d[1]
                 if ds > end or de < start:
                     continue
-                if ds < start:
-                    ds = start
-                if de > end:
-                    de = end
+                ds = max(ds, start)
+                de = min(de, end)
                 u = (de - ds).total_seconds()
                 if u < 0:
                     print("?")
@@ -69,7 +66,7 @@ def report(report_start, report_end):
             du += [x]
 
         st = start.strftime("%x")
-        print("{},{}".format(st, ",".join([str(x) for x in du])))
+        print(f'{st},{",".join([str(x) for x in du])}')
         start = end
 
     total_seconds = (last - first).total_seconds()
@@ -84,7 +81,7 @@ def report(report_start, report_end):
         x = int((used * 100) / total_seconds)
         total_used += [x]
 
-    print("total,{}".format(",".join([str(x) for x in total_used])))
+    print(f'total,{",".join([str(x) for x in total_used])}')
 
 
 if __name__ == '__main__':

@@ -76,6 +76,8 @@ def alexnet(pretrained=False, progress=True, device='cpu', **kwargs):
     model = AlexNet(**kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/alexnet.pt', map_location=device)
+        state_dict = torch.load(
+            f'{script_dir}/state_dicts/alexnet.pt', map_location=device
+        )
         model.load_state_dict(state_dict)
     return model

@@ -198,7 +198,7 @@ class SubsetSampler(Sampler):
         self.indices = indices
 
     def __iter__(self):
-        return (i for i in self.indices)
+        return iter(self.indices)
 
     def __len__(self):
         return len(self.indices)

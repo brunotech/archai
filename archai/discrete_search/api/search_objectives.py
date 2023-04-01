@@ -86,7 +86,7 @@ class SearchObjectives():
         # Casts dataset_providers to a list if necessary
         if not isinstance(dataset_providers, list):
             dataset_providers = [dataset_providers] * len(models)
-        
+
         # Splits `objs` in sync and async
         sync_objs = self._filter_objs(objs, 'objective', lambda x: isinstance(x, Objective))
         async_objs = self._filter_objs(objs, 'objective', lambda x: isinstance(x, AsyncObjective))
@@ -136,20 +136,23 @@ class SearchObjectives():
 
         # Gets results from async objectives
         pbar = (
-            tqdm(async_objs.items(), desc=f'Gathering results from async objectives...')
+            tqdm(
+                async_objs.items(),
+                desc='Gathering results from async objectives...',
+            )
             if progress_bar
             else async_objs.items()
         )
 
         for obj_name, obj_d in pbar:
             results = obj_d['objective'].fetch_all()
-            
+
             assert len(eval_indices[obj_name]) == len(results), \
-                'Received more results than expected.'
-            
+                    'Received more results than expected.'
+
             for result_i, eval_i in enumerate(eval_indices[obj_name]):
                 eval_results[obj_name][eval_i] = results[result_i]
-        
+
         # Updates cache
         if self.cache_objective_evaluation:
             for obj_name, obj_d in objs.items():
@@ -162,7 +165,7 @@ class SearchObjectives():
 
                     self.cache[cache_tuple] = eval_results[obj_name][i]
 
-        assert len(set(len(r) for r in eval_results.values())) == 1
+        assert len({len(r) for r in eval_results.values()}) == 1
 
         return {
             obj_name: np.ndarray(obj_results, dtype=np.float64)

@@ -75,12 +75,14 @@ class ImageNetFolder(torchvision.datasets.ImageFolder):
                     if line.strip()
                 ]
 
-            classes = list(set([line.split('/')[0] for line in datalist]))
-            classes.sort()
+            classes = sorted({line.split('/')[0] for line in datalist})
             class_to_idx = {classes[i]: i for i in range(len(classes))}
 
             samples = [
-                (os.path.join(self.split_folder, line + '.JPEG'), class_to_idx[line.split('/')[0]])
+                (
+                    os.path.join(self.split_folder, f'{line}.JPEG'),
+                    class_to_idx[line.split('/')[0]],
+                )
                 for line in datalist
             ]
 
@@ -150,8 +152,9 @@ class ImageNetFolder(torchvision.datasets.ImageFolder):
 
     def _verify_split(self, split):
         if split not in self.valid_splits:
-            msg = "Unknown split {} .".format(split)
-            msg += "Valid splits are {{}}.".format(", ".join(self.valid_splits))
+            msg = f"Unknown split {split} ." + "Valid splits are {{}}.".format(
+                ", ".join(self.valid_splits)
+            )
             raise ValueError(msg)
         return split
 
@@ -184,8 +187,8 @@ def _parse_meta(devkit_root, path='data', filename='meta.mat'):
             if num_children == 0]
     idcs, wnids, classes = list(zip(*meta))[:3]
     classes = [tuple(clss.split(', ')) for clss in classes]
-    idx_to_wnid = {idx: wnid for idx, wnid in zip(idcs, wnids)}
-    wnid_to_classes = {wnid: clss for wnid, clss in zip(wnids, classes)}
+    idx_to_wnid = dict(zip(idcs, wnids))
+    wnid_to_classes = dict(zip(wnids, classes))
     return idx_to_wnid, wnid_to_classes
 
 

@@ -149,7 +149,7 @@ class NvidiaTrainingArguments:
 
         """
 
-        return torch.device("cuda" if not self.no_cuda else "cpu")
+        return torch.device("cpu" if self.no_cuda else "cuda")
 
     def __post_init__(self) -> None:
         """Override post-initialization with custom instructions.

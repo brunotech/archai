@@ -41,7 +41,7 @@ class GsArchTrainer(ArchTrainer):
 
 
     @overrides
-    def pre_step(self, x:Tensor, y:Tensor)->None:
+    def pre_step(self, x:Tensor, y:Tensor) -> None:
         super().pre_step(x, y)
 
         # TODO: is it a good idea to ensure model is in training mode here?
@@ -78,7 +78,7 @@ class GsArchTrainer(ArchTrainer):
                     # send the sampled op weights to their respective edges
                     # to be used in forward
                     counter = 0
-                    for _, edge in enumerate(node):
+                    for edge in node:
                         if hasattr(edge._op, 'PRIMITIVES') and type(edge._op) == GsOp:
                             this_edge_sampled_weights = samples[counter:counter+len(edge._op.PRIMITIVES)]
                             edge._op.set_op_sampled_weights(this_edge_sampled_weights)

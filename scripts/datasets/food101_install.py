@@ -32,17 +32,16 @@ from archai.common import utils
 
 def copy_file_list(file_list, src_dir, dest_dir):
     with tqdm(total=len(file_list)) as pbar:
-        for i,filename in enumerate(file_list):
-            filename = filename.strip()
-            if filename:
+        for filename in file_list:
+            if filename := filename.strip():
                 # convert / to os-specific dir separator
-                filename_parts = (filename + '.jpg').split('/')
+                filename_parts = f'{filename}.jpg'.split('/')
                 target = os.path.join(dest_dir, *filename_parts)
                 if not os.path.isfile(target):
                     utils.copy_file(os.path.join(src_dir, *filename_parts), target)
             pbar.update(1)
 
-def prepare_data(dataroot:str)->None:
+def prepare_data(dataroot:str) -> None:
     meta_path = os.path.join(dataroot, 'food-101', 'meta')
     images_path = os.path.join(dataroot, 'food-101', 'images')
     train_path = os.path.join(dataroot, 'food-101', 'train')
@@ -53,8 +52,7 @@ def prepare_data(dataroot:str)->None:
     class_list = pathlib.Path(os.path.join(meta_path, 'classes.txt')).read_text().splitlines()
 
     for class_name in class_list:
-        class_name = class_name.strip()
-        if class_name:
+        if class_name := class_name.strip():
             os.makedirs(os.path.join(train_path, class_name), exist_ok=True)
             os.makedirs(os.path.join(test_path, class_name), exist_ok=True)
 

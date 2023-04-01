@@ -47,10 +47,7 @@ class DistributedStratifiedSampler(Sampler):
             else:
                 world_size = 1
         if rank is None:
-            if dist.is_available() and dist.is_initialized():
-                rank = dist.get_rank()
-            else:
-                rank = 0
+            rank = dist.get_rank() if dist.is_available() and dist.is_initialized() else 0
         if val_ratio is None:
             val_ratio = 0.0
 
@@ -127,7 +124,7 @@ class DistributedStratifiedSampler(Sampler):
             return indices, targets
 
 
-    def _indices(self)->Tuple[np.ndarray, np.ndarray]:
+    def _indices(self) -> Tuple[np.ndarray, np.ndarray]:
         if self.shuffle:
             g = torch.Generator()
             g.manual_seed(self._get_seed())
@@ -143,7 +140,7 @@ class DistributedStratifiedSampler(Sampler):
         else:
             assert self.total_size == self.data_len, 'total_size cannot be less than dataset size!'
 
-        targets = np.array(list(self.dataset.targets[i] for i in indices))
+        targets = np.array([self.dataset.targets[i] for i in indices])
         assert len(indices) == self.total_size
 
         return indices, targets

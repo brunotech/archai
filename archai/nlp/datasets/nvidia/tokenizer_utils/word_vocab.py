@@ -91,7 +91,7 @@ class WordVocab(VocabBase):
         """
 
         if self._config.add_prefix_space:
-            text = " " + text
+            text = f" {text}"
         if self._config.add_prefix_new_line:
             text = "\n" + text
         if self._config.lower_case:
@@ -133,9 +133,7 @@ class WordVocab(VocabBase):
         """
 
         text = self._preprocess_text(text)
-        symbols = text.split(self.delimiter)
-
-        return symbols
+        return text.split(self.delimiter)
 
     def _clear(self) -> None:
         """Clears the vocabulary."""
@@ -242,9 +240,7 @@ class WordVocab(VocabBase):
         if self.encode_special_tokens:
             symbols = self._bos + symbols + self._eos
 
-        toks = self.tokens_to_ids(symbols)
-
-        return toks
+        return self.tokens_to_ids(symbols)
 
     @overrides
     def decode_text(self, ids: List[int]) -> str:
@@ -292,7 +288,7 @@ class WordVocab(VocabBase):
         if sym not in self.sym2idx:
             self.idx2sym.append(sym)
             self.sym2idx[sym] = len(self.idx2sym) - 1
-            setattr(self, "{}_idx".format(sym.strip("<>")), self.sym2idx[sym])
+            setattr(self, f'{sym.strip("<>")}_idx', self.sym2idx[sym])
 
     def _add_symbol(self, sym: str) -> None:
         """Adds a symbol to vocabulary.

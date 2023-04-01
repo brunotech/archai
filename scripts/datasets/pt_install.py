@@ -35,7 +35,7 @@ def _create_ram_disk(req_ram:int, path:str)->bool:
     #     print('RAM disk is not created because not enough memory')
     #     return False
 
-def untar_dataset(conf_name:str, pt_data_dir:str, conf_dataset:Config, dataroot:str)->None:
+def untar_dataset(conf_name:str, pt_data_dir:str, conf_dataset:Config, dataroot:str) -> None:
     if 'storage_name' not in conf_dataset or not conf_dataset['storage_name']:
         print(f'data config {conf_name} ignored because storage_name key was not found or not set')
         return
@@ -43,7 +43,7 @@ def untar_dataset(conf_name:str, pt_data_dir:str, conf_dataset:Config, dataroot:
     print(f'Untaring for data config: {conf_name}')
 
     storage_name = conf_dataset['storage_name'] #TODO: rename to file_name
-    tar_filepath = os.path.join(pt_data_dir, storage_name + '.tar')
+    tar_filepath = os.path.join(pt_data_dir, f'{storage_name}.tar')
     if not os.path.isfile(tar_filepath):
         raise RuntimeError(f'Tar file for dataset at {tar_filepath} was not found')
 

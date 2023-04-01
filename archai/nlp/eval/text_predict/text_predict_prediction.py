@@ -114,10 +114,7 @@ class TextPredictPrediction:
 
         result = self.probability * self.p_accept_given_match()
 
-        if result < 0:
-            return 0.0
-
-        return result
+        return 0.0 if result < 0 else result
 
     def p_accept_given_match(self) -> float:
         """Probability of prediction being accepted given match.
@@ -129,10 +126,7 @@ class TextPredictPrediction:
 
         result = self.a * len(self) + self.b
 
-        if result < 0:
-            return 0.0
-
-        return result
+        return 0.0 if result < 0 else result
 
     def p_char_accept(self) -> float:
         """Probability of characters from prediction being accepted.
@@ -173,10 +167,7 @@ class TextPredictPrediction:
         if pred_length < 11:
             return "1:S"
 
-        if pred_length < 16:
-            return "2:M"
-
-        return "3:L"
+        return "2:M" if pred_length < 16 else "3:L"
 
     def word_count(self) -> int:
         """Calculates the number of words in the prediction.
@@ -186,10 +177,7 @@ class TextPredictPrediction:
 
         """
 
-        if len(self) == 0:
-            return 0
-
-        return len(re.findall(r"\s+", self.text.strip())) + 1
+        return 0 if len(self) == 0 else len(re.findall(r"\s+", self.text.strip())) + 1
 
     def is_empty(self) -> bool:
         """Calculates whether prediction is empty or not.
@@ -531,8 +519,6 @@ class TextPredictionSequence(OrderedDict):
 
         PREDICTION_FILE = "preds.ljson"
         SUMMARY_FILE = "summary.json"
-        TRIGGERED_FILE = "triggered_preds.csv"
-
         os.makedirs(output_dir, exist_ok=True)
 
         prediction_file_path = os.path.join(output_dir, PREDICTION_FILE)
@@ -546,6 +532,8 @@ class TextPredictionSequence(OrderedDict):
             f.write(summary)
 
         if self.triggered_preds is not None:
+            TRIGGERED_FILE = "triggered_preds.csv"
+
             triggered_prediction_file_path = os.path.join(output_dir, TRIGGERED_FILE)
             self.triggered_preds.to_csv(triggered_prediction_file_path, index=False)
 
@@ -606,10 +594,9 @@ class TextPredictionSequence(OrderedDict):
 
         predictions_df = pd.DataFrame(predictions)
         predictions_df_columns = ["Line", "Char", "Text", "BodyContinued"]
-        predictions_df_columns = (
-            predictions_df_columns
-            + predictions_df.columns.drop(predictions_df_columns + ["EndWithCompleteWord", "Tokens"]).tolist()
-        )
+        predictions_df_columns += predictions_df.columns.drop(
+            predictions_df_columns + ["EndWithCompleteWord", "Tokens"]
+        ).tolist()
         predictions_df = predictions_df[predictions_df_columns]
 
         return predictions_df
@@ -695,9 +682,7 @@ class TextPredictionSequence(OrderedDict):
 
             loss += len(token_ids) * model.get_loss(tuple(token_ids))
 
-        perplexity = np.exp(loss / token_ids_length)
-
-        return perplexity
+        return np.exp(loss / token_ids_length)
 
     def score_triggered_predictions(
         self,

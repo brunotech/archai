@@ -36,8 +36,7 @@ def get_connection_string():
         if not CONNECTION_STRING:
             print(f"Please specify your {CONNECTION_NAME} environment variable.")
             sys.exit(1)
-        st = os.getenv('STATUS_TABLE_NAME')
-        if st:
+        if st := os.getenv('STATUS_TABLE_NAME'):
             STATUS_TABLE = st.strip()
             validate_table_name(STATUS_TABLE)
     return CONNECTION_STRING
@@ -164,9 +163,13 @@ def print_entities(entities, columns=None):
     keys = []
     for e in entities:
         for k in e:
-            if k not in keys and k != 'PartitionKey' and k != 'RowKey':
-                if columns is None or k in columns:
-                    keys += [k]
+            if (
+                k not in keys
+                and k != 'PartitionKey'
+                and k != 'RowKey'
+                and (columns is None or k in columns)
+            ):
+                keys += [k]
 
     # so we can convert to .csv format
     print(", ".join(keys))
@@ -184,8 +187,8 @@ def print_entities(entities, columns=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Print status in .csv format using ' +
-        f'{CONNECTION_NAME} environment variable.')
+        description=f'Print status in .csv format using {CONNECTION_NAME} environment variable.'
+    )
     parser.add_argument('--status', help='Optional match for the status column (default None).')
     parser.add_argument('--name', help='Optional name of single status row to return (default None).')
     parser.add_argument('--not_equal', '-ne', help='Switch the match to a not-equal comparison.', action="store_true")
@@ -198,7 +201,5 @@ if __name__ == '__main__':
     if args.name:
         entities = [e for e in entities if 'name' in e and e['name'] == args.name]
 
-    columns = None
-    if args.cols:
-        columns = [x.strip() for x in args.cols.split(',')]
+    columns = [x.strip() for x in args.cols.split(',')] if args.cols else None
     print_entities(entities, columns)

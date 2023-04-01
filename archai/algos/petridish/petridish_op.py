@@ -23,8 +23,7 @@ class StopForward(Op):
 
     @overrides
     def forward(self, x):
-        y = x - self._sg_op(x)
-        return y
+        return x - self._sg_op(x)
 
 class StopGradient(Op):
     @staticmethod

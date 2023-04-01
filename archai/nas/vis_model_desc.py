@@ -10,8 +10,7 @@ from .model_desc import CellDesc, CellType, ModelDesc
 from ..common.utils import first_or_default
 from ..common.common import logger
 
-def draw_model_desc(model_desc:ModelDesc, filepath:str=None, caption:str=None)\
-        ->Tuple[Optional[Digraph],Optional[Digraph]]:
+def draw_model_desc(model_desc:ModelDesc, filepath:str=None, caption:str=None) -> Tuple[Optional[Digraph],Optional[Digraph]]:
 
     normal_cell_desc = first_or_default((c for c in model_desc.cell_descs() \
                                         if c.cell_type == CellType.Regular), None)
@@ -19,12 +18,24 @@ def draw_model_desc(model_desc:ModelDesc, filepath:str=None, caption:str=None)\
     reduced_cell_desc = first_or_default((c for c in model_desc.cell_descs() \
                                         if c.cell_type == CellType.Reduction), None)
 
-    g_normal = draw_cell_desc(normal_cell_desc,
-        filepath+'-normal' if filepath else None,
-        caption) if normal_cell_desc is not None else None
-    g_reduct = draw_cell_desc(reduced_cell_desc,
-        filepath+'-reduced' if filepath else None,
-        caption) if reduced_cell_desc is not None else None
+    g_normal = (
+        draw_cell_desc(
+            normal_cell_desc,
+            f'{filepath}-normal' if filepath else None,
+            caption,
+        )
+        if normal_cell_desc is not None
+        else None
+    )
+    g_reduct = (
+        draw_cell_desc(
+            reduced_cell_desc,
+            f'{filepath}-reduced' if filepath else None,
+            caption,
+        )
+        if reduced_cell_desc is not None
+        else None
+    )
 
     return g_normal, g_reduct
 

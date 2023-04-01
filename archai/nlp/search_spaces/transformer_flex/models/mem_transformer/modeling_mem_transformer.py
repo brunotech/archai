@@ -158,11 +158,7 @@ class MemTransformerModel(TransfoXLModel):
             all_ones = word_embeds.new_ones((q_length, k_length + past_length), dtype=torch.uint8)
             mask_length = k_length - self.mem_len
 
-            if mask_length > 0:
-                mask_shifted_length = q_length - mask_length
-            else:
-                mask_shifted_length = q_length
-
+            mask_shifted_length = q_length - mask_length if mask_length > 0 else q_length
             dec_attn_mask = (
                 torch.triu(all_ones, 1 + mem_length + past_length) + torch.tril(all_ones, -mask_shifted_length)
             )[:, :, None]
@@ -233,15 +229,20 @@ class MemTransformerModel(TransfoXLModel):
         # (batch_size, length, d_model)
         output = output.transpose(0, 1).contiguous()
 
-        if not return_dict:
-            return tuple(v for v in [output, presents, new_mems, hidden_states, attentions] if v is not None)
-
-        return MemTransformerBaseOutput(
-            last_hidden_state=output,
-            past_key_values=presents,
-            mems=new_mems,
-            hidden_states=hidden_states,
-            attentions=attentions,
+        return (
+            MemTransformerBaseOutput(
+                last_hidden_state=output,
+                past_key_values=presents,
+                mems=new_mems,
+                hidden_states=hidden_states,
+                attentions=attentions,
+            )
+            if return_dict
+            else tuple(
+                v
+                for v in [output, presents, new_mems, hidden_states, attentions]
+                if v is not None
+            )
         )
 
 
@@ -334,11 +335,7 @@ class MemTransformerLMHeadModel(TransfoXLPreTrainedModel):
         if not return_dict:
             output = (prediction_scores,) + transformer_outputs[1:]
 
-            if loss is not None:
-                return (loss,) + output
-
-            return output
-
+            return (loss,) + output if loss is not None else output
         return MemTransformerOutput(
             loss=loss,
             prediction_scores=prediction_scores,

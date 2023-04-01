@@ -25,17 +25,13 @@ def run():
 
         name = e['name']
         changed = False
-        if 'quantized' not in e:
-            is_quantized = container.get_blob_client(f'{name}/model.quant.dlc').exists()
-            if is_quantized:
+        if is_quantized := container.get_blob_client(
+            f'{name}/model.quant.dlc'
+        ).exists():
+            if 'quantized' not in e:
                 e['quantized'] = True
                 changed = True
                 print(f"Setting quantized to True for {name}")
-            elif 'quantized' in e:
-                e['quantized'] = False
-                changed = True
-                print(f"Setting quantized to False for {name}")
-
         if changed:
             update_status_entity(e, service=service)
 

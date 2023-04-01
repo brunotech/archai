@@ -20,16 +20,15 @@ def random_neighbor(param_values: List[int], current_value: int):
     param2idx = {param: idx for idx, param in enumerate(param_values)}
 
     # Gets the index of the closest value to the current value
-    if current_value in param2idx:
-        current_idx = param2idx[current_value]
-    else:
-        current_idx = param2idx[min(param2idx, key=lambda k: abs(k - current_value))]
-
+    current_idx = param2idx.get(
+        current_value,
+        param2idx[min(param2idx, key=lambda k: abs(k - current_value))],
+    )
     offset = random.randint(
         a=-1 if current_idx > 0 else 0,
         b=1 if current_idx < len(param_values) - 1 else 0
     )
-    
+
     return param_values[current_idx + offset]
 
 
@@ -37,27 +36,28 @@ def rename_dag_node_list(node_list: List[Dict], prefix: str = '',
                          rename_input_output: bool = True,
                          add_input_output: bool = False) -> List[Dict]:
     node_list = copy.deepcopy(node_list)
-    prefix = prefix + '_' if prefix else ''
+    prefix = f'{prefix}_' if prefix else ''
 
-    rename_map = {}
-    if not rename_input_output:
-        rename_map = {'input': 'input', 'output': 'output'}
-
+    rename_map = (
+        {} if rename_input_output else {'input': 'input', 'output': 'output'}
+    )
     for i, node in enumerate(node_list):
         if node['name'] not in rename_map:
 
             if add_input_output:
                 new_name = (
-                    'input' if i == 0 else 
-                    'output' if i == len(node_list) - 1 else
-                    prefix + f'layer_{i}'
+                    'input'
+                    if i == 0
+                    else 'output'
+                    if i == len(node_list) - 1
+                    else f'{prefix}layer_{i}'
                 )
             else:
-                new_name = prefix + f'layer_{i}'
+                new_name = f'{prefix}layer_{i}'
 
             rename_map[node['name']] = new_name
             node['name'] = new_name
-        
+
         if node['inputs']:
             node['inputs'] = [
                 rename_map[inp_name] 
@@ -100,9 +100,9 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
         if op_subset:
             self.operations = [op for op in self.operations if op in op_subset]
 
-        assert len(self.operations) > 0
+        assert self.operations
 
-        self.encoder_features = ['scale', 'channels', 'op'] if not encoder_features else encoder_features
+        self.encoder_features = encoder_features or ['scale', 'channels', 'op']
 
         self.min_mac = min_mac
         self.max_mac = max_mac
@@ -113,13 +113,13 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
         assert self.min_layers <= self.max_layers
 
         self.max_downsample_factor = max_downsample_factor
-        assert self.max_downsample_factor in set([2, 4, 8, 16])
+        assert self.max_downsample_factor in {2, 4, 8, 16}
 
         self.max_skip_connection_length = max_skip_connection_length
         assert self.max_skip_connection_length > 0
 
         self.max_scale_delta = max_scale_delta
-        assert self.max_scale_delta in set([1, 2, 3])
+        assert self.max_scale_delta in {1, 2, 3}
 
         self.post_upsample_layers_list = list(range(1, max_post_upsample_layers + 1))
         assert len(self.post_upsample_layers_list) < 5
@@ -127,11 +127,11 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
         self.base_channels_list = list(range(min_base_channels, max_base_channels + 1, base_channels_binwidth))
         assert min_base_channels <= max_base_channels
         assert len(self.base_channels_list) > 1
-        
+
         self.delta_channels_list = list(range(min_delta_channels, max_delta_channels + 1, delta_channels_binwidth))
         self.mult_delta = mult_delta
         assert min_delta_channels <= max_delta_channels
-        assert len(self.delta_channels_list) >= 1
+        assert self.delta_channels_list
 
         self.skip_connections = skip_connections
         self.downsample_prob_ratio = downsample_prob_ratio
@@ -184,7 +184,7 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
         neighbors = []
         nb_tries = 0
 
-        while nb_tries < patience and len(neighbors) == 0:
+        while nb_tries < patience and not neighbors:
             nb_tries += 1
             graph = copy.deepcopy(list(base_model.arch.graph.values()))
             channels_per_scale = copy.deepcopy(base_model.arch.channels_per_scale)
@@ -212,18 +212,18 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
             # and its input sources
             chosen_node_idx = random.randint(1, len(graph) - 1)
             node = graph[chosen_node_idx]
-            
+
             if node['name'] != 'output':
                 node['op'] = random.choice(self.operations)
-            
-            # choose up to k inputs from previous nodes
-            max_inputs = 3 # TODO: make config 
 
             # Gets the out connections for each node
             edges = [tuple(k.split('-')) for k in base_model.arch.edge_dict.keys()]
             out_degree = lambda x: len([(orig, dest) for orig, dest in edges if orig == x])
 
             if node['name'] != 'input':
+                # choose up to k inputs from previous nodes
+                max_inputs = 3 # TODO: make config 
+
                 k = min(chosen_node_idx, random.randint(1, max_inputs))
                 input_idxs = random.sample(range(chosen_node_idx), k)
 
@@ -238,17 +238,17 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
 
             # compile the model
             nbr_model = SegmentationArchaiModel(graph, channels_per_scale, post_upsample_layers)
-            
+
             try:
                 out_shape = nbr_model.validate_forward(
                     torch.randn(1, 3, *nbr_model.img_size[::-1])
                 ).shape
 
                 assert out_shape == torch.Size([1, self.nb_classes, *nbr_model.img_size[::-1]])
-            
+
             except Exception as e:
                 print(f'{base_model.arch.to_hash()} -> {nbr_model.to_hash()} failed')
-                print(str(e))
+                print(e)
                 continue
 
             # check if the model is within desired bounds    
@@ -318,16 +318,12 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
             left_pivot_idx = random.randint(1, len(left_n) - 2)
             left_pivot = left_n[left_pivot_idx]
 
-            # Samples a pivot node from the right model w/ the same scale as the left_pivot
-            # excluding input and output nodes
-            right_candidates = [
+            if right_candidates := [
                 i
                 for i, fields in enumerate(right_g)
-                if fields['scale'] == left_g[left_pivot_idx]['scale'] and\
-                0 < i < (len(right_n) - 1)
-            ]
-
-            if len(right_candidates) > 0:
+                if fields['scale'] == left_g[left_pivot_idx]['scale']
+                and 0 < i < (len(right_n) - 1)
+            ]:
                 # Picks a right pivot
                 right_pivot_idx = random.choice(right_candidates)
 
@@ -351,11 +347,8 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
                                 if n['scale'] == right_g[right_node2idx[inp]]['scale']
                             ]
 
-                            fields['inputs'][inp_idx] = (
-                                random.choice(candidates) if len(candidates) > 0
-                                else None
-                            )
-                            
+                            fields['inputs'][inp_idx] = random.choice(candidates) if candidates else None
+
                 # Renames end node
                 right_half[-1]['name'] = 'output'
 
@@ -365,7 +358,7 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
 
                 # Merge and rename nodes
                 result_g = rename_dag_node_list(left_half + right_half, add_input_output=True)
-                
+
                 # Pick `channels_per_scale` and `post_upsample_layers` from left_m or right_m
                 ch_map = random.choice(
                     [copy.deepcopy(model_1.arch.channels_per_scale), copy.deepcopy(model_2.arch.channels_per_scale)]
@@ -383,13 +376,13 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
                         'mult_delta': ch_map['mult_delta']},
                         post_upsample_layers
                     )
-                    
+
                     out_shape = result_model.arch.validate_forward(
                         torch.randn(1, 3, *result_model.arch.img_size[::-1])
                     ).shape
 
                     assert out_shape == torch.Size([1, self.nb_classes, *result_model.arch.img_size[::-1]])
-                
+
                 except Exception as e:
                     logger.info(
                         f'Crossover between {model_1.arch.to_hash()}, {model_2.arch.to_hash()} failed '
@@ -397,7 +390,7 @@ class DiscreteSearchSpaceSegmentation(DiscreteSearchSpace):
                     )
                     logger.info(str(e))
                     continue
-                
+
                 result_model.metadata['parents'] = left_m.metadata['archid'] + ',' + right_m.metadata['archid']
 
                 return result_model

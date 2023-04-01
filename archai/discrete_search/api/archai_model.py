@@ -20,7 +20,7 @@ class ArchaiModel():
     def __init__(self, arch: Any, archid: str, metadata: Optional[Dict] = None):
         self.arch = arch
         self.archid = archid
-        self.metadata = metadata or dict()
+        self.metadata = metadata or {}
 
     def __repr__(self):
         return (

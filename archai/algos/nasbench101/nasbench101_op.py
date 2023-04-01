@@ -41,10 +41,8 @@ class NasBench101Op(Op):
         assert not isinstance(x, torch.Tensor)
         assert len(x) == self._in_len
 
-        x0 = x[0] if not self._proj_first else self._proj_op(x[0])
+        x0 = self._proj_op(x[0]) if self._proj_first else x[0]
         s = sum(x[1:]) + x0
-        out = self._vertex_op(s)
-
-        return out
+        return self._vertex_op(s)
 
 

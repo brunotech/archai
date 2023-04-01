@@ -22,12 +22,12 @@ class DataGenerator():
         self.transpose = transpose
         all_seg_files = sorted(glob.glob(os.path.join(self.root, '*_seg.png')))
         if len(all_seg_files) == 0:
-            print("### no *_seg.png files found in {}".format(self.root))
+            print(f"### no *_seg.png files found in {self.root}")
             sys.exit(1)
         # use first 10000 images for quantization and last 10000 images for test
         assert subset in ['quant', 'test']
         if subset == 'quant':
-            self.seg_files = all_seg_files[0:1000]
+            self.seg_files = all_seg_files[:1000]
         elif subset == 'test':
             self.seg_files = all_seg_files[len(all_seg_files) - count:]
         self.img_files = [s.replace("_seg.png", ".png") for s in self.seg_files]
@@ -75,7 +75,7 @@ def create_dataset(src_root, subset, shape, count, trans=None):
 
     with open(os.path.join(dst_root, 'input_list_for_device.txt'), 'w') as f:
         for fname in file_list:
-            device_path = device_working_dir + '/data/test/' + os.path.basename(fname)
+            device_path = f'{device_working_dir}/data/test/{os.path.basename(fname)}'
             f.write(device_path)
             f.write('\n')
 
@@ -94,17 +94,13 @@ if __name__ == '__main__':
     dataset = args.input
     if not dataset:
         dataset = os.getenv("INPUT_DATASET")
-        if not dataset:
-            print("please provide --input or set your INPUT_DATASET environment variable")
-            sys.exit(1)
+    if not dataset:
+        print("please provide --input or set your INPUT_DATASET environment variable")
+        sys.exit(1)
 
     count = args.count
     dim = args.dim
     transpose = args.transpose
-    if transpose:
-        transpose = (2, 0, 1)
-    else:
-        transpose = None
-
+    transpose = (2, 0, 1) if transpose else None
     create_dataset(dataset, 'quant', [dim, dim], count, transpose)
     create_dataset(dataset, 'test', [dim, dim], count, transpose)

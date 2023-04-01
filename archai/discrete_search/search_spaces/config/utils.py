@@ -7,19 +7,19 @@ from archai.discrete_search.search_spaces.config.discrete_choice import Discrete
 
 def flatten_dict(odict: Dict) -> OrderedDict:
     fdict = OrderedDict()
-    
+
     def _flatten(prefix, d):
-        prefix = prefix + '.' if prefix else prefix
-        
+        prefix = f'{prefix}.' if prefix else prefix
+
         if isinstance(d, OrderedDict):
             for k, v in d.items():
                 flat_v = _flatten(prefix + k, v)
-                
+
                 if flat_v is not None:
                     fdict[prefix + k] = flat_v        
         else:
             return d
-    
+
     _flatten('', odict)
     return fdict
 

@@ -37,9 +37,7 @@ def parse_args():
 
     parser.add_argument("-nti", "--new_token_id", type=int, default=6, help="Identifier of token to be predicted.")
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

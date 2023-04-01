@@ -59,9 +59,7 @@ def parse_args() -> argparse.Namespace:
         help="Size of the vocabulary.",
     )
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

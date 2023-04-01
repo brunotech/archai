@@ -199,9 +199,9 @@ class FakeDynamicQuantLinear(torch.nn.Linear):
 
         """
 
-        assert type(mod) == cls._FLOAT_MODULE, (
-            " qat." + cls.__name__ + ".from_float only works for " + cls._FLOAT_MODULE.__name__
-        )
+        assert (
+            type(mod) == cls._FLOAT_MODULE
+        ), f" qat.{cls.__name__}.from_float only works for {cls._FLOAT_MODULE.__name__}"
 
         if not qconfig:
             assert hasattr(mod, "qconfig"), "Input float module must have qconfig defined"
@@ -342,9 +342,9 @@ class FakeDynamicQuantConv1d(torch.nn.Conv1d):
 
         """
 
-        assert type(mod) == cls._FLOAT_MODULE, (
-            " qat." + cls.__name__ + ".from_float only works for " + cls._FLOAT_MODULE.__name__
-        )
+        assert (
+            type(mod) == cls._FLOAT_MODULE
+        ), f" qat.{cls.__name__}.from_float only works for {cls._FLOAT_MODULE.__name__}"
 
         if not qconfig:
             assert hasattr(mod, "qconfig"), "Input float module must have qconfig defined"
@@ -504,9 +504,9 @@ class FakeDynamicQuantHFConv1D(transformers.modeling_utils.Conv1D):
 
         """
 
-        assert type(mod) == cls._FLOAT_MODULE, (
-            " qat." + cls.__name__ + ".from_float only works for " + cls._FLOAT_MODULE.__name__
-        )
+        assert (
+            type(mod) == cls._FLOAT_MODULE
+        ), f" qat.{cls.__name__}.from_float only works for {cls._FLOAT_MODULE.__name__}"
 
         if not qconfig:
             assert hasattr(mod, "qconfig"), "Input float module must have qconfig defined"

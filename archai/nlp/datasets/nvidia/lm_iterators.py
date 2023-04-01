@@ -111,10 +111,7 @@ class LMOrderedIterator:
         input_ids = self.input_ids[:, start_idx:end_idx].to(self.device, non_blocking=True)
         labels = self.input_ids[:, i + 1 : i + 1 + seq_len].to(self.device, non_blocking=True)
 
-        warmup = True
-        if self.mem_len and self.warmup:
-            warmup = i >= self.warmup_elems
-
+        warmup = i >= self.warmup_elems if self.mem_len and self.warmup else True
         return input_ids, labels, seq_len, warmup
 
     def get_fixlen_iter(self, start: Optional[int] = 0) -> Generator[Tuple, None, None]:

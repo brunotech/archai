@@ -56,16 +56,16 @@ class ArchTrainer(Trainer, EnforceOverrides):
     def _draw_model(self) -> None:
         if not self._plotsdir:
             return
-        train_metrics = self.get_metrics()
-        if train_metrics:
+        if train_metrics := self.get_metrics():
             best_train, best_val, best_test = train_metrics.run_metrics.best_epoch()
             # if test is available and is best for this epoch then mark it as best
             is_best = best_test and best_test.index==train_metrics.cur_epoch().index
             # if val is available and is best for this epoch then mark it as best
             is_best = is_best or best_val and best_val.index==train_metrics.cur_epoch().index
-            # if neither val or test availavle then use train metrics
-            is_best = is_best or best_train.index==train_metrics.cur_epoch().index
-            if is_best:
+            if (
+                is_best := is_best
+                or best_train.index == train_metrics.cur_epoch().index
+            ):
                 # log model_desc as a image
                 plot_filepath = utils.full_path(os.path.join(
                                     self._plotsdir,

@@ -46,16 +46,13 @@ class FakeDynamicQuant(torch.nn.Module):
         assert dtype in (torch.quint8, torch.qint8)
 
         if dtype == torch.quint8:
-            if self.reduce_range:
-                self.qmin, self.qmax = 0, 2 ** (bits - 1)
-            else:
-                self.qmin, self.qmax = 0, 2**bits - 1
-
+            self.qmin, self.qmax = (
+                (0, 2 ** (bits - 1)) if self.reduce_range else (0, 2**bits - 1)
+            )
+        elif self.reduce_range:
+            self.qmin, self.qmax = -(2 ** (bits - 2)), 2 ** (bits - 2) - 1
         else:
-            if self.reduce_range:
-                self.qmin, self.qmax = -(2 ** (bits - 2)), 2 ** (bits - 2) - 1
-            else:
-                self.qmin, self.qmax = -(2 ** (bits - 1)), 2 ** (bits - 1) - 1
+            self.qmin, self.qmax = -(2 ** (bits - 1)), 2 ** (bits - 1) - 1
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass over the fake dynamic quantization module.

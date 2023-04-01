@@ -34,11 +34,11 @@ class SeparableConvBlock(nn.Module):
         self.kernel_size = kernel_size
         self.id_skip = id_skip
 
-        # Expansion phase
-        inp = in_channels  # number of input channels
         oup = int(in_channels * self.expand_ratio)  # number of output channels
 
         if expand_ratio != 1:
+            # Expansion phase
+            inp = in_channels  # number of input channels
             self._expand_conv = nn.Conv2d(in_channels=inp, out_channels=oup, kernel_size=1, bias=bias)
             self._bn0 = nn.BatchNorm2d(num_features=oup)
 

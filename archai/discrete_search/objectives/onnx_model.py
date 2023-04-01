@@ -29,18 +29,20 @@ class AvgOnnxLatency(Objective):
                 passed to `onnxruntime.InferenceSession()`. Defaults to None.
         """
         input_shapes = [input_shape] if isinstance(input_shape, tuple) else input_shape            
-        
+
         rand_min, rand_max = rand_range
-        self.sample_input = tuple([
-            ((rand_max - rand_min) * torch.rand(*input_shape) + rand_min).type(input_dtype)
+        self.sample_input = tuple(
+            ((rand_max - rand_min) * torch.rand(*input_shape) + rand_min).type(
+                input_dtype
+            )
             for input_shape in input_shapes
-        ])
+        )
 
         self.input_dtype = input_dtype
         self.rand_range = rand_range
         self.num_trials = num_trials
-        self.export_kwargs = export_kwargs or dict()
-        self.inf_session_kwargs = inf_session_kwargs or dict()
+        self.export_kwargs = export_kwargs or {}
+        self.inf_session_kwargs = inf_session_kwargs or {}
 
     @overrides
     def evaluate(self, model: ArchaiModel, dataset_provider: DatasetProvider,

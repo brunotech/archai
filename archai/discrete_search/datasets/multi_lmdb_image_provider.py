@@ -102,7 +102,7 @@ class MultiTensorpackLmdbImageProvider(DatasetProvider):
         )
 
         assert len(tr_subset) + len(val_subset) == len(tr_dataset)
-        assert len(set(tr_subset.indices).intersection(set(val_subset.indices))) == 0  
+        assert not set(tr_subset.indices).intersection(set(val_subset.indices))  
 
         return tr_subset, val_subset
 

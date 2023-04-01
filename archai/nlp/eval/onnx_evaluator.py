@@ -109,8 +109,7 @@ def manual_evaluate(
     eval_acc = {k: (v / step).item() for k, v in eval_acc.items()}
     eval_runtime = end_time - start_time
 
-    # Generates the output dictionary with some metrics
-    output = {
+    return {
         "eval_loss": eval_loss,
         "eval_ppl": math.exp(eval_loss),
         "eval_acc": eval_acc,
@@ -119,5 +118,3 @@ def manual_evaluate(
         "eval_steps_per_second": step / eval_runtime,
         "step": step,
     }
-
-    return output

@@ -46,7 +46,7 @@ class Finalizers(EnforceOverrides):
                 for i,cell in enumerate(model.cells)]
 
     def finalize_cell(self, cell:Cell, cell_index:int,
-                      model_desc:ModelDesc, *args, **kwargs)->CellDesc:
+                      model_desc:ModelDesc, *args, **kwargs) -> CellDesc:
         # first finalize each node, we will need to recreate node desc with final version
         max_final_edges = model_desc.max_final_edges
 
@@ -56,16 +56,18 @@ class Finalizers(EnforceOverrides):
             node_descs.append(node_desc)
 
         desc = cell.desc
-        finalized = CellDesc(
-            id = desc.id, cell_type=desc.cell_type, conf_cell=desc.conf_cell,
+        return CellDesc(
+            id=desc.id,
+            cell_type=desc.cell_type,
+            conf_cell=desc.conf_cell,
             stems=[cell.s0_op.finalize()[0], cell.s1_op.finalize()[0]],
             stem_shapes=desc.stem_shapes,
-            nodes = node_descs, node_shapes=desc.node_shapes,
+            nodes=node_descs,
+            node_shapes=desc.node_shapes,
             post_op=cell.post_op.finalize()[0],
             out_shape=desc.out_shape,
-            trainables_from = desc.trainables_from
+            trainables_from=desc.trainables_from,
         )
-        return finalized
 
     def finalize_node(self, node:nn.ModuleList, node_index:int,
                       node_desc:NodeDesc, max_final_edges:int,

@@ -46,10 +46,7 @@ class CocobBackprop(optim.Optimizer):
 
     def step(self, closure=None):
 
-        loss = None
-        if closure is not None:
-            loss = closure()
-
+        loss = closure() if closure is not None else None
         for group in self.param_groups:
             for param in group['params']:
                 if param.grad is None:
@@ -143,10 +140,7 @@ class CocobOns(optim.Optimizer):
 
     def step(self, closure=None):
 
-        loss = None
-        if closure is not None:
-            loss = closure()
-
+        loss = closure() if closure is not None else None
         for group in self.param_groups:
             for param in group['params']:
                 if param.grad is None:

@@ -14,7 +14,7 @@ class Shell:
         self.output = ''
         self.verbose = print_output
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0,
-                              universal_newlines=True, cwd=cwd, shell=True) as proc:
+                                  universal_newlines=True, cwd=cwd, shell=True) as proc:
 
             stdout_thread = Thread(target=self.logstream, args=(proc.stdout,))
             stderr_thread = Thread(target=self.logstream, args=(proc.stderr,))
@@ -29,20 +29,19 @@ class Shell:
 
             if proc.returncode:
                 words = command.split(' ')
-                print("### command {} failed with error code {}".format(words[0], proc.returncode))
+                print(f"### command {words[0]} failed with error code {proc.returncode}")
                 raise Exception(self.output)
             return self.output
 
     def logstream(self, stream):
         try:
             while True:
-                out = stream.readline()
-                if out:
+                if out := stream.readline():
                     self.log(out)
                 else:
                     break
         except Exception as ex:
-            msg = "### Exception: {}".format(ex)
+            msg = f"### Exception: {ex}"
             self.log(msg)
 
     def log(self, msg):

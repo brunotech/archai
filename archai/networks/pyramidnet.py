@@ -201,10 +201,17 @@ class PyramidNet(nn.Module):
         if stride != 1:  # or self.inplanes != int(round(featuremap_dim_1st)) * block.outchannel_ratio:
             downsample = nn.AvgPool2d((2, 2), stride=(2, 2), ceil_mode=True)
 
-        layers = []
         self.featuremap_dim = self.featuremap_dim + self.addrate
-        layers.append(block(self.input_featuremap_dim, int(round(self.featuremap_dim)), stride, downsample, p_shakedrop=self.ps_shakedrop.pop(0)))
-        for i in range(1, block_depth):
+        layers = [
+            block(
+                self.input_featuremap_dim,
+                int(round(self.featuremap_dim)),
+                stride,
+                downsample,
+                p_shakedrop=self.ps_shakedrop.pop(0),
+            )
+        ]
+        for _ in range(1, block_depth):
             temp_featuremap_dim = self.featuremap_dim + self.addrate
             layers.append(
                 block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)), 1, p_shakedrop=self.ps_shakedrop.pop(0)))
@@ -214,7 +221,7 @@ class PyramidNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        if self.dataset == 'cifar10' or self.dataset == 'cifar100':
+        if self.dataset in ['cifar10', 'cifar100']:
             x = self.conv1(x)
             x = self.bn1(x)
 

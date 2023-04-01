@@ -73,15 +73,15 @@ class PredictiveDNNEnsemble(Predictor):
             optimizer = torch.optim.Adam(member.parameters(), lr=self.lr)
             member.train()
 
-            for t in range(self.num_tr_steps):
+            for _ in range(self.num_tr_steps):
                 y_pred = member(Xt)
                 loss = criterion(y_pred.squeeze(), yt.squeeze())        
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            
-            # print(f'Final training loss {loss.item()}')
+                
+                # print(f'Final training loss {loss.item()}')
 
         self.is_fit = True
 
@@ -114,7 +114,9 @@ class FFEnsembleMember(nn.Module):
         self.width = width
 
         self.linears = nn.ModuleList([nn.Linear(self.input_feat_len, width)])
-        self.linears.extend([nn.Linear(width, width) for i in range(1, self.num_layers-1)])
+        self.linears.extend(
+            [nn.Linear(width, width) for _ in range(1, self.num_layers - 1)]
+        )
         self.output = nn.Linear(width, num_objectives)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

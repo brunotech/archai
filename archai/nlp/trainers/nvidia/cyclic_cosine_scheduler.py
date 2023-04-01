@@ -65,48 +65,49 @@ class CyclicCosineDecayLR(_LRScheduler):
         """
 
         if not isinstance(init_decay_epochs, int) or init_decay_epochs < 1:
-            raise ValueError("init_decay_epochs must be positive integer, got {} instead".format(init_decay_epochs))
+            raise ValueError(
+                f"init_decay_epochs must be positive integer, got {init_decay_epochs} instead"
+            )
 
         if isinstance(min_decay_lr, Iterable) and len(min_decay_lr) != len(optimizer.param_groups):
             raise ValueError(
-                "Expected len(min_decay_lr) to be equal to len(optimizer.param_groups), "
-                "got {} and {} instead".format(len(min_decay_lr), len(optimizer.param_groups))
+                f"Expected len(min_decay_lr) to be equal to len(optimizer.param_groups), got {len(min_decay_lr)} and {len(optimizer.param_groups)} instead"
             )
 
         if restart_interval is not None and (not isinstance(restart_interval, int) or restart_interval < 1):
-            raise ValueError("restart_interval must be positive integer, got {} instead".format(restart_interval))
+            raise ValueError(
+                f"restart_interval must be positive integer, got {restart_interval} instead"
+            )
 
         if restart_interval_multiplier is not None and (
             not isinstance(restart_interval_multiplier, float) or restart_interval_multiplier <= 0
         ):
             raise ValueError(
-                "restart_interval_multiplier must be positive float, got {} instead".format(restart_interval_multiplier)
+                f"restart_interval_multiplier must be positive float, got {restart_interval_multiplier} instead"
             )
 
         if isinstance(restart_lr, Iterable) and len(restart_lr) != len(optimizer.param_groups):
             raise ValueError(
-                "Expected len(restart_lr) to be equal to len(optimizer.param_groups), "
-                "got {} and {} instead".format(len(restart_lr), len(optimizer.param_groups))
+                f"Expected len(restart_lr) to be equal to len(optimizer.param_groups), got {len(restart_lr)} and {len(optimizer.param_groups)} instead"
             )
 
         if warmup_epochs is not None:
             if not isinstance(warmup_epochs, int) or warmup_epochs < 1:
                 raise ValueError(
-                    "Expected warmup_epochs to be positive integer, got {} instead".format(type(warmup_epochs))
+                    f"Expected warmup_epochs to be positive integer, got {type(warmup_epochs)} instead"
                 )
 
             if warmup_start_lr is None:
                 raise ValueError("warmup_start_lr must be set when warmup_epochs is not None")
 
-            if not (isinstance(warmup_start_lr, float) or isinstance(warmup_start_lr, Iterable)):
+            if not (isinstance(warmup_start_lr, (float, Iterable))):
                 raise ValueError(
-                    "warmup_start_lr must be either float or iterable of floats, got {} instead".format(warmup_start_lr)
+                    f"warmup_start_lr must be either float or iterable of floats, got {warmup_start_lr} instead"
                 )
 
             if isinstance(warmup_start_lr, Iterable) and len(warmup_start_lr) != len(optimizer.param_groups):
                 raise ValueError(
-                    "Expected len(warmup_start_lr) to be equal to len(optimizer.param_groups), "
-                    "got {} and {} instead".format(len(warmup_start_lr), len(optimizer.param_groups))
+                    f"Expected len(warmup_start_lr) to be equal to len(optimizer.param_groups), got {len(warmup_start_lr)} and {len(optimizer.param_groups)} instead"
                 )
 
         group_num = len(optimizer.param_groups)
@@ -138,24 +139,23 @@ class CyclicCosineDecayLR(_LRScheduler):
                 self.last_epoch - self._warmup_epochs, self._init_decay_epochs, self.base_lrs, self._min_decay_lr
             )
         else:
-            if self._restart_interval is not None:
-                if self._restart_interval_multiplier is None:
-                    cycle_epoch = (
-                        self.last_epoch - self._init_decay_epochs - self._warmup_epochs
-                    ) % self._restart_interval
-                    lrs = self.base_lrs if self._restart_lr is None else self._restart_lr
-
-                    return self._calc(cycle_epoch, self._restart_interval, lrs, self._min_decay_lr)
-                else:
-                    n = self._get_n(self.last_epoch - self._warmup_epochs - self._init_decay_epochs)
-                    sn_prev = self._partial_sum(n)
-                    cycle_epoch = self.last_epoch - sn_prev - self._warmup_epochs - self._init_decay_epochs
-                    interval = self._restart_interval * self._restart_interval_multiplier**n
-                    lrs = self.base_lrs if self._restart_lr is None else self._restart_lr
-
-                    return self._calc(cycle_epoch, interval, lrs, self._min_decay_lr)
-            else:
+            if self._restart_interval is None:
                 return self._min_decay_lr
+            if self._restart_interval_multiplier is None:
+                cycle_epoch = (
+                    self.last_epoch - self._init_decay_epochs - self._warmup_epochs
+                ) % self._restart_interval
+                lrs = self.base_lrs if self._restart_lr is None else self._restart_lr
+
+                return self._calc(cycle_epoch, self._restart_interval, lrs, self._min_decay_lr)
+            else:
+                n = self._get_n(self.last_epoch - self._warmup_epochs - self._init_decay_epochs)
+                sn_prev = self._partial_sum(n)
+                cycle_epoch = self.last_epoch - sn_prev - self._warmup_epochs - self._init_decay_epochs
+                interval = self._restart_interval * self._restart_interval_multiplier**n
+                lrs = self.base_lrs if self._restart_lr is None else self._restart_lr
+
+                return self._calc(cycle_epoch, interval, lrs, self._min_decay_lr)
 
     def _calc(self, t: int, T: int, lrs: List[float], min_lrs: List[float]) -> List[float]:
         """Calculate the learning rate for the current cycle epoch.

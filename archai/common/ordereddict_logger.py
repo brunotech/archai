@@ -15,10 +15,8 @@ TItems = Union[Mapping, str]
 
 # do not reference common or otherwise we will have circular deps
 
-def _fmt(val:Any)->str:
-    if isinstance(val, float):
-        return f'{val:.4g}'
-    return str(val)
+def _fmt(val:Any) -> str:
+    return f'{val:.4g}' if isinstance(val, float) else str(val)
 
 class OrderedDictLogger:
     """The purpose of the structured logging is to store logs as key value pair. However, when you have loop and sub routine calls, what you need is hierarchical dictionaries where the value for a key could be a dictionary. The idea is that you set one of the nodes in tree as current node and start logging your values. You can then use pushd to create and go to child node and popd to come back to parent. To implement this mechanism we use two main variables: _stack allows us to push each node on stack when pushd is called. The node is OrderedDictionary. As a convinience, we let specify child path in pushd in which case child hierarchy is created and current node will be set to the last node in specified path. When popd is called, we go back to original parent instead of parent of current node. To implement this we use _paths variable which stores subpath when each pushd call was made.
@@ -49,8 +47,7 @@ class OrderedDictLogger:
                 root_od = yaml.load(self._filepath, Loader=yaml.Loader)
             if backup_existing_file:
                 cur_p = pathlib.Path(filepath)
-                new_p = cur_p.with_name(cur_p.stem + '.' + str(int(time.time()))
-                                        + cur_p.suffix)
+                new_p = cur_p.with_name(f'{cur_p.stem}.{int(time.time())}{cur_p.suffix}')
                 if os.path.exists(str(new_p)):
                     raise RuntimeError(f'Cannot backup file {filepath} because new name {new_p} already exist')
                 cur_p.rename(new_p)
@@ -62,7 +59,7 @@ class OrderedDictLogger:
     def warn(self, dict:TItems, level:Optional[int]=logging.WARN, exists_ok=False)->None:
         self.info(dict, level, exists_ok)
 
-    def info(self, dict:TItems, level:Optional[int]=logging.INFO, exists_ok=False)->None:
+    def info(self, dict:TItems, level:Optional[int]=logging.INFO, exists_ok=False) -> None:
         self._call_count += 1 # provides default key when key is not specified
 
         if isinstance(dict, Mapping): # if logging dict then just update current section
@@ -74,10 +71,10 @@ class OrderedDictLogger:
             self._update_key(self._call_count, msg, node=self._root(), path=[key])
 
         if level is not None and self._logger:
-            self._logger.log(msg=self.path() + ' ' + msg, level=level)
+            self._logger.log(msg=f'{self.path()} {msg}', level=level)
 
         if self._save_delay is not None and \
-                time.time() - self._last_save > self._save_delay:
+                    time.time() - self._last_save > self._save_delay:
             self.save()
             self._last_save = time.time()
 
@@ -92,9 +89,8 @@ class OrderedDictLogger:
         assert c is not None
         return c
 
-    def save(self, filepath:Optional[str]=None)->None:
-        filepath = filepath or self._filepath
-        if filepath:
+    def save(self, filepath:Optional[str]=None) -> None:
+        if filepath := filepath or self._filepath:
             with open(filepath, 'w') as f:
                 yaml.dump(self._root(), f)
 
@@ -171,12 +167,12 @@ class OrderedDictLogger:
         self._stack.pop()
         self._paths.pop()
 
-    def path(self)->str:
-        if not self._yaml_log:
-            return '/'
-
-        # flatten array of array
-        return '/'.join(itertools.chain.from_iterable(self._paths[1:]))
+    def path(self) -> str:
+        return (
+            '/'.join(itertools.chain.from_iterable(self._paths[1:]))
+            if self._yaml_log
+            else '/'
+        )
 
     def __enter__(self)->'OrderedDictLogger':
         return self

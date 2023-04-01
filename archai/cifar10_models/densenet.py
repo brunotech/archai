@@ -121,7 +121,9 @@ def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, pr
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/'+arch+'.pt', map_location=device)
+        state_dict = torch.load(
+            f'{script_dir}/state_dicts/{arch}.pt', map_location=device
+        )
         model.load_state_dict(state_dict)
     return model
 

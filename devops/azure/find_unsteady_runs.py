@@ -47,7 +47,7 @@ def find_unsteady_runs(threshold, reset, limit=None):
         s.reverse()
         if limit:
             print(f"Found {len(s)} wobbly jobs, but limiting reset to the newest {limit} jobs")
-            s = s[0:limit]
+            s = s[:limit]
 
         for e in s:
             name = e['name']

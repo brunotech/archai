@@ -55,9 +55,7 @@ def parse_args() -> argparse.Namespace:
         help="Output file to save the pre-trained tokenizer.",
     )
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

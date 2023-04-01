@@ -3,6 +3,7 @@
 
 """File-related utilities."""
 
+
 import os
 import re
 from pathlib import Path
@@ -11,7 +12,7 @@ import torch
 
 # File-related constants
 CHECKPOINT_FOLDER_PREFIX = "checkpoint"
-CHECKPOINT_REGEX = re.compile(r"^" + CHECKPOINT_FOLDER_PREFIX + r"\-(\d+)$")
+CHECKPOINT_REGEX = re.compile(f"^{CHECKPOINT_FOLDER_PREFIX}" + r"\-(\d+)$")
 
 
 def calculate_onnx_model_size(model_path: str) -> float:
@@ -28,9 +29,7 @@ def calculate_onnx_model_size(model_path: str) -> float:
 
     """
 
-    size = os.path.getsize(model_path) / 1e6
-
-    return size
+    return os.path.getsize(model_path) / 1e6
 
 
 def calculate_torch_model_size(model: torch.nn.Module) -> float:
@@ -80,10 +79,7 @@ def check_available_checkpoint(folder_name: str) -> bool:
         if CHECKPOINT_REGEX.search(path) is not None and os.path.isdir(os.path.join(folder_name, path))
     ]
 
-    if len(checkpoints) == 0:
-        return False
-
-    return True
+    return bool(checkpoints)
 
 
 def create_file_name_identifier(file_name: str, identifier: str) -> str:

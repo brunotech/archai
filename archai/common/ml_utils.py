@@ -23,7 +23,7 @@ from .ml_losses import SmoothCrossEntropyLoss
 from .warmup_scheduler import GradualWarmupScheduler
 
 
-def create_optimizer(conf_opt:Config, params)->Optimizer:
+def create_optimizer(conf_opt:Config, params) -> Optimizer:
     optim_type = conf_opt['type']
     lr = conf_opt.get_val('lr', math.nan)
     decay = conf_opt.get_val('decay', math.nan)
@@ -31,7 +31,7 @@ def create_optimizer(conf_opt:Config, params)->Optimizer:
 
     if not math.isnan(decay_bn):
         bn_params = [v for n, v in params if 'bn' in n]
-        rest_params = [v for n, v in params if not 'bn' in n]
+        rest_params = [v for n, v in params if 'bn' not in n]
         params = [{
             'params': bn_params,
             'weight_decay': decay_bn
@@ -60,7 +60,7 @@ def create_optimizer(conf_opt:Config, params)->Optimizer:
         return statopt.SALSA(params,
             alpha=conf_opt['alpha'])
     else:
-        raise ValueError('invalid optimizer type=%s' % optim_type)
+        raise ValueError(f'invalid optimizer type={optim_type}')
 
 def get_optim_lr(optimizer:Optimizer)->float:
     for param_group in optimizer.param_groups:
@@ -83,17 +83,15 @@ def ensure_pytorch_ver(min_ver:str, error_msg:str)->bool:
             return False
     return True
 
-def join_chunks(chunks:List[Tensor])->Tensor:
+def join_chunks(chunks:List[Tensor]) -> Tensor:
     """If batch was divided in chunks, this functions joins them again"""
     assert len(chunks)
     if len(chunks) == 1:
         return chunks[0] # nothing to concate
-    if len(chunks[0].shape):
-        return torch.cat(chunks)
-    return torch.stack(chunks) # TODO: this adds new dimension
+    return torch.cat(chunks) if len(chunks[0].shape) else torch.stack(chunks)
 
 def create_lr_scheduler(conf_lrs:Config, epochs:int, optimizer:Optimizer,
-        steps_per_epoch:Optional[int])-> Tuple[Optional[_LRScheduler], bool]:
+        steps_per_epoch:Optional[int]) -> Tuple[Optional[_LRScheduler], bool]:
 
     # epoch_or_step - apply every epoch or every step
     scheduler, epoch_or_step = None, True # by default sched step on epoch
@@ -134,7 +132,7 @@ def create_lr_scheduler(conf_lrs:Config, epochs:int, optimizer:Optimizer,
         elif not lr_scheduler_type:
                 scheduler = None
         else:
-            raise ValueError('invalid lr_schduler=%s' % lr_scheduler_type)
+            raise ValueError(f'invalid lr_schduler={lr_scheduler_type}')
 
         # select warmup for LR schedule
         if warmup_epochs:
@@ -157,14 +155,14 @@ def _adjust_learning_rate_pyramid(optimizer, max_epoch:int, base_lr:float):
     return lr_scheduler.LambdaLR(optimizer, _internal_adjust_learning_rate_pyramid)
 
 
-def get_lossfn(conf_lossfn:Config)->_Loss:
+def get_lossfn(conf_lossfn:Config) -> _Loss:
     type = conf_lossfn['type']
     if type == 'CrossEntropyLoss':
         return nn.CrossEntropyLoss()
     elif type == 'CrossEntropyLabelSmooth':
         return SmoothCrossEntropyLoss(smoothing=conf_lossfn['smoothing'])
     else:
-        raise ValueError('criterian type "{}" is not supported'.format(type))
+        raise ValueError(f'criterian type "{type}" is not supported')
 
 def param_size(module:nn.Module, ignore_aux=True, only_req_grad=False):
     """count all parameters excluding auxiliary"""

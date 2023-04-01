@@ -86,7 +86,7 @@ class EvaluaterPetridish(Evaluater):
     @staticmethod
     @ray.remote(num_gpus=1)
     def _train_dist(evaluater:Evaluater, conf_eval:Config, model_desc_builder:ModelDescBuilder,
-                    model_desc_filename:str, common_state, source_folder:Optional[str])->ConvexHullPoint:
+                    model_desc_filename:str, common_state, source_folder:Optional[str]) -> ConvexHullPoint:
         """Train given a model"""
 
         common.init_from(common_state)
@@ -116,12 +116,8 @@ class EvaluaterPetridish(Evaluater):
             conf_checkpoint['filename'] = utils.append_to_filename(model_filename, '_checkpoint', '.pth')
             checkpoint = nas_utils.create_checkpoint(conf_checkpoint, resume)
 
-            if checkpoint is not None and resume:
-                if 'metrics_stats' in checkpoint:
-                    # return the output we had recorded in the checkpoint
-                    convex_hull_point = checkpoint['metrics_stats']
-                    return convex_hull_point
-
+            if checkpoint is not None and resume and 'metrics_stats' in checkpoint:
+                return checkpoint['metrics_stats']
         # template model is what we used during the search
         if source_folder:
             template_model_desc = ModelDesc.load(os.path.join(source_folder, utils.filepath_name_ext(model_desc_filename)))
@@ -142,7 +138,7 @@ class EvaluaterPetridish(Evaluater):
         model_desc.save(full_desc_filename)
 
         model = evaluater.model_from_desc(model_desc)
-        
+
         train_metrics = evaluater.train_model(conf_eval, model, checkpoint)
         train_metrics.save(metrics_filename)
 

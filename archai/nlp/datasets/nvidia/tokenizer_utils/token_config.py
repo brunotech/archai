@@ -75,7 +75,4 @@ class TokenConfig:
             return self.eos_token
         if sp == SpecialTokenEnum.UNK:
             return self.unk_token
-        if sp == SpecialTokenEnum.PAD:
-            return self.pad_token
-
-        return None
+        return self.pad_token if sp == SpecialTokenEnum.PAD else None

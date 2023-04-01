@@ -148,11 +148,8 @@ class ArchConfigList(ArchConfig):
 
     def to_dict(self, remove_metadata_info: bool = False):
         if remove_metadata_info:
-            blocks = [
+            return [
                 self.nodes['_configs'].pick(str(i), record_usage=False).to_dict()
                 for i in range(self.max_size)
             ]
-
-            return blocks
-        
         return super().to_dict(remove_metadata_info)

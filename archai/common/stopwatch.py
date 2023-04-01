@@ -74,7 +74,7 @@ class StopWatch:
         return self.clocks.keys()
 
     def __str__(self):
-        return '\n'.join(['%s: %s' % (k, v) for k, v in self.clocks.items()])
+        return '\n'.join([f'{k}: {v}' for k, v in self.clocks.items()])
 
     def __repr__(self):
         return self.__str__()

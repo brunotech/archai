@@ -120,15 +120,12 @@ def check_dataset(shape, name, test_size):
 
 
 def convert(name, entity, long_name, model_path):
-    log("Converting model: " + long_name)
+    log(f"Converting model: {long_name}")
     entity['model_name'] = long_name
     entity['status'] = 'converting'
     merge_status_entity(entity)
 
-    shape = None
-    if 'shape' in entity:
-        shape = eval(entity['shape'])
-
+    shape = eval(entity['shape']) if 'shape' in entity else None
     model_dir = os.path.join(name, SNPE_MODEL_DIR)
     model, input_shape, quantized, error = convert_model(model_path, model_dir, shape)
     if error:
@@ -142,7 +139,7 @@ def convert(name, entity, long_name, model_path):
         merge_status_entity(entity)
 
     if not quantized:
-        log("Uploading converted model: " + model)
+        log(f"Uploading converted model: {model}")
         upload_blob(name, model)
 
     return model
@@ -164,16 +161,14 @@ def quantize(name, entity, model):
         return 'error'
 
     # save the quantized .dlc since it takes so long to produce.
-    log("Uploading quantized model: " + model)
+    log(f"Uploading quantized model: {model}")
     upload_blob(name, model)
     return model
 
 
 def get_unique_node_id():
     global UNIQUE_NODE_ID
-    if UNIQUE_NODE_ID:
-        return UNIQUE_NODE_ID
-    return platform.node()
+    return UNIQUE_NODE_ID or platform.node()
 
 
 def set_unique_node_id(id):
@@ -273,9 +268,7 @@ def benchmarks_complete(entity):
 
 def get_mean_benchmark(entity):
     avg = get_total_inference_avg(entity)
-    if len(avg) > 0:
-        return int(statistics.mean(avg))
-    return 0
+    return int(statistics.mean(avg)) if len(avg) > 0 else 0
 
 
 def get_int64_value(entity, name):
@@ -299,34 +292,30 @@ def benchmark(entity, model, name):
     if (total_benchmark_runs >= MAX_BENCHMARK_RUNS):
         return False  # nothing to do
 
-    if total_benchmark_runs < MAX_BENCHMARK_RUNS:
-        BENCHMARK_RUN_COUNT += 1
-        if CLEAR_RANDOM_INPUTS > 0 and BENCHMARK_RUN_COUNT >= CLEAR_RANDOM_INPUTS:
-            clear_random_inputs()
-            BENCHMARK_RUN_COUNT = 0
-        log(f"Running benchmark iteration {total_benchmark_runs} of {MAX_BENCHMARK_RUNS}...")
-        entity['status'] = 'running benchmark'
-        merge_status_entity(entity)
+    BENCHMARK_RUN_COUNT += 1
+    if CLEAR_RANDOM_INPUTS > 0 and BENCHMARK_RUN_COUNT >= CLEAR_RANDOM_INPUTS:
+        clear_random_inputs()
+        BENCHMARK_RUN_COUNT = 0
+    log(f"Running benchmark iteration {total_benchmark_runs} of {MAX_BENCHMARK_RUNS}...")
+    entity['status'] = 'running benchmark'
+    merge_status_entity(entity)
 
-        start = get_utc_date()
-        ifs, perf_result = run_benchmark(model, name, input_shape, snpe_root, 5, BENCHMARK_INPUT_SIZE)
-        end = get_utc_date()
-        add_usage(get_device(), start, end)
+    start = get_utc_date()
+    ifs, perf_result = run_benchmark(model, name, input_shape, snpe_root, 5, BENCHMARK_INPUT_SIZE)
+    end = get_utc_date()
+    add_usage(get_device(), start, end)
 
-        upload_blob(name, perf_result)
+    upload_blob(name, perf_result)
 
-        total_inference_avg = get_total_inference_avg(entity)
-        total_inference_avg += [ifs]
-        entity['total_inference_avg'] = json.dumps(total_inference_avg)
-        mean = int(statistics.mean(total_inference_avg))
-        entity['mean'] = mean
-        if len(total_inference_avg) > 1:
-            stdev = int(statistics.stdev(total_inference_avg))
-            entity['stdev'] = int((stdev * 100) / mean)
-        total_benchmark_runs += 1
-    else:
-        mean = get_mean_benchmark(entity)
-
+    total_inference_avg = get_total_inference_avg(entity)
+    total_inference_avg += [ifs]
+    entity['total_inference_avg'] = json.dumps(total_inference_avg)
+    mean = int(statistics.mean(total_inference_avg))
+    entity['mean'] = mean
+    if len(total_inference_avg) > 1:
+        stdev = int(statistics.stdev(total_inference_avg))
+        entity['stdev'] = int((stdev * 100) / mean)
+    total_benchmark_runs += 1
     if is_benchmark_only(entity, False) and total_benchmark_runs == MAX_BENCHMARK_RUNS:
         entity['status'] = 'complete'
         entity['completed'] = get_utc_date()
@@ -386,7 +375,7 @@ def run_model(name, snpe_root, dataset, conn_string, use_device, benchmark_only,
         model_found, long_name, model = download_model(name, snpe_model_dir, conn_string, 'model.dlc')
         if not model_found:
             raise Exception('### internal error, the model.dlc download failed!')
-    elif not is_quantized and not converted:
+    elif not is_quantized:
         entity['status'] = 'error'
         entity['error'] = 'missing model'
         merge_status_entity(entity)
@@ -425,9 +414,8 @@ def run_model(name, snpe_root, dataset, conn_string, use_device, benchmark_only,
         upload_blob(name, html)
         return
 
-    if use_device:
-        if benchmark(entity, model, name):
-            return
+    if use_device and benchmark(entity, model, name):
+        return
 
     if benchmark_only:
         log(f"Benchmark only has nothing to do on model {name}")
@@ -462,7 +450,7 @@ def run_model(name, snpe_root, dataset, conn_string, use_device, benchmark_only,
         return
 
     input_shape = eval(entity['shape'])
-    input_size = tuple(input_shape)[0:2]  # e.g. (256,256)
+    input_size = tuple(input_shape)[:2]
 
     # copy model to the device.
     if prop != 'f1_onnx':
@@ -527,17 +515,18 @@ def is_benchmark_only(entity, benchmark_only):
 def node_quantizing():
     """ Ee don't want to do more than one quantization at a time on a given node
     because it is an CPU intensive operation. """
-    id = platform.node() + '_'
+    id = f'{platform.node()}_'
     count = 0
     for e in get_all_status_entities(status='complete', not_equal=True):
-        status = ''
-        if 'status' in e:
-            status = e['status']
+        status = e['status'] if 'status' in e else ''
         if 'node' not in e:
             continue
         node = e['node']
-        if node.startswith(id) and node != get_unique_node_id() and \
-           (status == 'converting' or status == 'quantizing'):
+        if (
+            node.startswith(id)
+            and node != get_unique_node_id()
+            and status in ['converting', 'quantizing']
+        ):
             count += 1
     return count > 0
 
@@ -752,8 +741,5 @@ if __name__ == '__main__':
     else:
         set_unique_node_id(platform.node())
 
-    subset = None
-    if args.subset:
-        subset = [x.strip() for x in args.subset.split(',')]
-
+    subset = [x.strip() for x in args.subset.split(',')] if args.subset else None
     monitor(snpe_root, dataset, device is not None, args.benchmark, subset, args.no_quantization)

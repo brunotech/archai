@@ -46,7 +46,7 @@ class GemmQuant(QuantOperatorBase):
         # Updates original attributes to current node
         kwargs = {}
         for attribute in node.attribute:
-            kwargs.update(attribute_to_kwarg(attribute))
+            kwargs |= attribute_to_kwarg(attribute)
         kwargs.pop("beta")
 
         # Adds proper domain and missing attributes
@@ -63,21 +63,28 @@ class GemmQuant(QuantOperatorBase):
             qgemm_inputs += [q_name, scale_name, zp_name]
 
         # Adds a "QGemm" node to replace original Gemm with its quantized version
-        qgemm_output = node.output[0] + "_output_quantized"
-        qgemm_name = node.name + "_quant" if node.name != "" else ""
+        qgemm_output = f"{node.output[0]}_output_quantized"
+        qgemm_name = f"{node.name}_quant" if node.name != "" else ""
         qgemm_node = onnx.helper.make_node("QGemm", qgemm_inputs, [qgemm_output], qgemm_name, **kwargs)
         nodes.append(qgemm_node)
 
         # Adds a "Cast" node to cast QGemm output to float
-        cast_op_output = qgemm_output + "_cast_output"
+        cast_op_output = f"{qgemm_output}_cast_output"
         cast_node = onnx.helper.make_node(
-            "Cast", [qgemm_output], [cast_op_output], qgemm_output + "_cast", to=onnx_proto.TensorProto.FLOAT
+            "Cast",
+            [qgemm_output],
+            [cast_op_output],
+            f"{qgemm_output}_cast",
+            to=onnx_proto.TensorProto.FLOAT,
         )
         nodes.append(cast_node)
 
         # Adds a "Add" node to sum the remaining bias to the Gemm output
         bias_node = onnx.helper.make_node(
-            "Add", [cast_node.output[0], "crit.out_layers_biases.0"], [node.output[0]], qgemm_name + "_output_add"
+            "Add",
+            [cast_node.output[0], "crit.out_layers_biases.0"],
+            [node.output[0]],
+            f"{qgemm_name}_output_add",
         )
         nodes.append(bias_node)
 
@@ -145,7 +152,7 @@ def dynamic_quantization_torch(
         # Checks if supplied embedding layer really exists
         if rgetattr(model_qnt, layer, 0):
             # Sets the appropriate `qconfig` for embedding layers
-            attr = layer + ".qconfig"
+            attr = f"{layer}.qconfig"
             rsetattr(model_qnt, attr, torch.quantization.float_qparams_weight_only_qconfig)
 
     # Prepares the model for quantization and quantizes it

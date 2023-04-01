@@ -91,7 +91,7 @@ def load_state_dict(val:Any, state_dict:Mapping)->None:
     for k, v in obj.__dict__.items():
         setattr(val, k, v)
 
-def deep_comp(o1:Any, o2:Any)->bool:
+def deep_comp(o1:Any, o2:Any) -> bool:
     # NOTE: dict don't have __dict__
     o1d = getattr(o1, '__dict__', None)
     o2d = getattr(o2, '__dict__', None)
@@ -101,16 +101,18 @@ def deep_comp(o1:Any, o2:Any)->bool:
         # we will compare their dictionaries
         o1, o2 = o1.__dict__, o2.__dict__
 
-    if o1 is not None and o2 is not None:
-        # if both are dictionaries, we will compare each key
-        if isinstance(o1, dict) and isinstance(o2, dict):
-            for k in set().union(o1.keys(), o2.keys()):
-                if k in o1 and k in o2:
-                    if not deep_comp(o1[k], o2[k]):
-                        return False
-                else:
-                    return False # some key missing
-            return True
+    if (
+        o1 is not None
+        and o2 is not None
+        and isinstance(o1, dict)
+        and isinstance(o2, dict)
+    ):
+        for k in set().union(o1.keys(), o2.keys()):
+            if k not in o1 or k not in o2:
+                return False # some key missing
+            if not deep_comp(o1[k], o2[k]):
+                return False
+        return True
     # mismatched object types or both are scalers, or one or both None
     return o1 == o2
 
@@ -173,10 +175,8 @@ def create_logger(filepath:Optional[str]=None,
         logger.addHandler(fh)
     return logger
 
-def fmt(val:Any)->str:
-    if isinstance(val, float):
-        return f'{val:.4g}'
-    return str(val)
+def fmt(val:Any) -> str:
+    return f'{val:.4g}' if isinstance(val, float) else str(val)
 
 def append_csv_file(filepath:str, new_row:List[Tuple[str, Any]], delimiter='\t'):
     fieldnames, rows = [], []
@@ -184,7 +184,7 @@ def append_csv_file(filepath:str, new_row:List[Tuple[str, Any]], delimiter='\t')
         with open(filepath, 'r') as f:
             dr = csv.DictReader(f, delimiter=delimiter)
             fieldnames = dr.fieldnames
-            rows = [row for row in dr.reader]
+            rows = list(dr.reader)
     if fieldnames is None:
         fieldnames = []
 
@@ -196,7 +196,7 @@ def append_csv_file(filepath:str, new_row:List[Tuple[str, Any]], delimiter='\t')
         dr = csv.DictWriter(f, fieldnames=new_fieldnames.keys(), delimiter=delimiter)
         dr.writeheader()
         for row in rows:
-            d = dict((k,v) for k,v in zip(fieldnames, row))
+            d = dict(zip(fieldnames, row))
             dr.writerow(d)
         dr.writerow(OrderedDict(new_row))
 
@@ -377,11 +377,11 @@ def uri2path(file_uri:str, windows_non_standard:bool=False)->str:
         os.path.join(host, url2pathname(unquote(parsed.path)))
     )
 
-def get_ranks(items:list, key=lambda v:v, reverse=False)->List[int]:
+def get_ranks(items:list, key=lambda v:v, reverse=False) -> List[int]:
     sorted_t = sorted(zip(items, range(len(items))),
                       key=lambda t: key(t[0]),
                       reverse=reverse)
-    sorted_map = dict((t[1], i) for i, t in enumerate(sorted_t))
+    sorted_map = {t[1]: i for i, t in enumerate(sorted_t)}
     return [sorted_map[i] for i in range(len(items))]
 
 def dedup_list(l:List)->List:
@@ -411,13 +411,13 @@ def map_to_list(variable:Union[int,float,Sized], size:int)->Sized:
 
     return [variable] * size
 
-def attr_to_dict(obj:Any, recursive:bool=True)->Dict[str, Any]:
+def attr_to_dict(obj:Any, recursive:bool=True) -> Dict[str, Any]:
     MAX_LIST_LEN = 10
     variables = {}
 
     var_dict = dict(vars(obj.__class__))
     try:
-        var_dict.update(dict(vars(obj)))
+        var_dict |= dict(vars(obj))
     except TypeError:
         pass
 

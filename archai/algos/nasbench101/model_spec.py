@@ -74,7 +74,7 @@ class ModelSpec(object):
     num_vertices = np.shape(self.original_matrix)[0]
 
     # DFS forward from input
-    visited_from_input = set([0])
+    visited_from_input = {0}
     frontier = [0]
     while frontier:
       top = frontier.pop()
@@ -84,11 +84,11 @@ class ModelSpec(object):
           frontier.append(v)
 
     # DFS backward from output
-    visited_from_output = set([num_vertices - 1])
+    visited_from_output = {num_vertices - 1}
     frontier = [num_vertices - 1]
     while frontier:
       top = frontier.pop()
-      for v in range(0, top):
+      for v in range(top):
         if self.original_matrix[v, top] and v not in visited_from_output:
           visited_from_output.add(v)
           frontier.append(v)
@@ -145,7 +145,7 @@ class ModelSpec(object):
 def is_upper_triangular(matrix):
   """True if matrix is 0 on diagonal and below."""
   for src in range(np.shape(matrix)[0]):
-    for dst in range(0, src + 1):
+    for dst in range(src + 1):
       if matrix[src, dst] != 0:
         return False
 

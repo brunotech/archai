@@ -65,7 +65,7 @@ class XnasOp(Op):
         self._setup_arch_params(arch_params)
 
     def update_alphas(self, eta:float, current_t:int, total_t:int, grad_clip:float):       
-        grad_flat = torch.flatten(self._grad)        
+        grad_flat = torch.flatten(self._grad)
         rewards = torch.tensor([-torch.dot(grad_flat, torch.flatten(activ)) for activ in self._activs])
         exprewards = torch.exp(eta * rewards).cuda()
         # NOTE: Will this remain registered?
@@ -85,7 +85,7 @@ class XnasOp(Op):
 
         # save some debugging info
         expdir = get_expdir()
-        filename = os.path.join(expdir, str(id(self)) + '.txt')
+        filename = os.path.join(expdir, f'{id(self)}.txt')
 
         # save debug info to file
         alphas = [str(self._alphas[0][i].item()) for i in range(self._alphas[0].shape[0])]

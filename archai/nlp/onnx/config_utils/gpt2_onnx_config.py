@@ -64,16 +64,14 @@ class GPT2FlexOnnxConfig(OnnxConfigWithPast):
         if self.use_past:
             # [past_key_values, batch_size, n_head[i], past_seq_len, d_head[i]]
             dummy_inputs["past_key_values"] = tuple(
-                [
-                    torch.zeros(
-                        self.config.past_key_values,
-                        batch_size,
-                        self.num_attention_heads[i],
-                        past_seq_len,
-                        self.hidden_size // self.num_attention_heads[i],
-                    )
-                    for i in range(self.num_layers)
-                ]
+                torch.zeros(
+                    self.config.past_key_values,
+                    batch_size,
+                    self.num_attention_heads[i],
+                    past_seq_len,
+                    self.hidden_size // self.num_attention_heads[i],
+                )
+                for i in range(self.num_layers)
             )
 
         return dummy_inputs

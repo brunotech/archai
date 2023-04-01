@@ -54,7 +54,7 @@ def dataset_valid(dataroot: str) -> bool:
 
     num_train_files = 0
     for base, dirs, files in os.walk(train):
-        for file in files:
+        for _ in files:
             num_train_files += 1
 
     if num_train_files != 1261:
@@ -62,14 +62,10 @@ def dataset_valid(dataroot: str) -> bool:
 
     num_test_files = 0
     for base, dirs, files in os.walk(test):
-        for file in files:
+        for _ in files:
             num_test_files += 1
 
-    if num_test_files != 318:
-        return False
-
-    # all checks passed
-    return True
+    return num_test_files == 318
 
 
 def download():
@@ -103,8 +99,7 @@ def download():
 
 def copy_data_helper(data: Dict[str, List[str]], imagesroot: str, foldername: str) -> None:
 
-    for key in data.keys():
-        images = data[key]
+    for key, images in data.items():
         for im in images:
             if not im:
                 continue

@@ -139,17 +139,13 @@ def _find_non_dominated_sorting(all_points: np.ndarray) -> List[List[int]]:
 
     for idx in range(all_points.shape[0]):
         front_rank = _find_front_rank(all_points, idx, fronts)        
-        
+
         if front_rank >= len(fronts):
             fronts.append([])
 
         fronts[front_rank].append(idx)
 
-    ret = []
-    for front in fronts:
-        ret.append(lex_sorting[front])
-
-    return ret
+    return [lex_sorting[front] for front in fronts]
 
 
 def _find_front_rank(all_points: np.ndarray, idx: int, fronts: List[List[int]]) -> int:
@@ -193,7 +189,6 @@ def _find_front_rank(all_points: np.ndarray, idx: int, fronts: List[List[int]]) 
 
         if non_dominated:
             return rank
-        else:
-            rank += 1
-            if rank >= num_found_fronts:
-                return num_found_fronts
+        rank += 1
+        if rank >= num_found_fronts:
+            return num_found_fronts

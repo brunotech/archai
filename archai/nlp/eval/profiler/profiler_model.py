@@ -62,9 +62,9 @@ class ProfilerModel:
 
             def post_hook(module: torch.nn.Module, input: torch.Tensor, output: torch.Tensor):
                 if FLOPS:
-                    module.__flops__ += sum([elem[1] for elem in FLOPS[-1]])
+                    module.__flops__ += sum(elem[1] for elem in FLOPS[-1])
                     FLOPS.pop()
-                    module.__macs__ += sum([elem[1] for elem in MACS[-1]])
+                    module.__macs__ += sum(elem[1] for elem in MACS[-1])
                     MACS.pop()
 
             if not hasattr(module, "__post_hook_handle__"):

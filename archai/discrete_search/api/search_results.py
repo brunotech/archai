@@ -48,19 +48,21 @@ class SearchResults():
         assert len(self.objectives) == len(evaluation_results)
         assert all(len(r) == len(models) for r in evaluation_results.values())
 
-        extra_model_data = copy.deepcopy(extra_model_data) or dict()
-        
+        extra_model_data = copy.deepcopy(extra_model_data) or {}
+
         if extra_model_data:
             assert all(len(v) == len(models) for v in extra_model_data.values())
-        
-        evaluation_results = copy.deepcopy(evaluation_results)
-        evaluation_results.update(extra_model_data)
 
-        self.results.append({
-            'archid': [m.archid for m in models],
-            'models': [m for m in models], # To avoid creating a reference to `models` variable
-            **evaluation_results
-        })
+        evaluation_results = copy.deepcopy(evaluation_results)
+        evaluation_results |= extra_model_data
+
+        self.results.append(
+            {
+                'archid': [m.archid for m in models],
+                'models': list(models),
+                **evaluation_results,
+            }
+        )
 
         # Adds current search duration in hours
         self.search_walltimes += [(time() - self.init_time) / 3600] * len(models)
@@ -145,15 +147,15 @@ class SearchResults():
         status_df = self.get_search_state_df().copy()
 
         fig, ax = plt.subplots(figsize=(10, 5))
-        status_range = range(0, self.iteration_num + 1)
-        
+        status_range = range(self.iteration_num + 1)
+
         # Transforms dimensions to be decreasing if necessary
         max_x, max_y = status_df[obj_x].max(), status_df[obj_y].max()
         status_df['x'], status_df['y'] = status_df[obj_x], status_df[obj_y]
 
         if self.objectives[obj_x].higher_is_better:
             status_df['x'] = (max_x - status_df['x'])
-        
+
         if self.objectives[obj_y].higher_is_better:
             status_df['y'] = (max_y - status_df['y'])
 
@@ -162,7 +164,7 @@ class SearchResults():
 
         for s in status_range:
             generation_df = status_df.query(f'iteration_num <= {s}').copy()
-            
+
             points = generation_df[['x', 'y']].values
             pareto_df = generation_df.iloc[_find_pareto_frontier_points(points)].copy()
             pareto_df = pareto_df.sort_values('x')
@@ -173,7 +175,7 @@ class SearchResults():
                 color=colors[s]
             )
             ax.plot(pareto_df[obj_x], pareto_df[obj_y], 'o', color=colors[s])
-        
+
         ax.set_xlabel(obj_x)
         ax.set_ylabel(obj_y)
         fig.colorbar(sm, ax=ax)

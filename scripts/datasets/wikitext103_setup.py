@@ -20,8 +20,7 @@ class _Corpus:
         with open(path, 'r', encoding='utf-8') as f:
             for line in f:
                 words = line.split() + ['<eos>']
-                for w in words:
-                    tokens.append(self.word2idx[w])
+                tokens.extend(self.word2idx[w] for w in words)
         return np.array(tokens)
 
 def main():
@@ -47,7 +46,7 @@ def main():
         assert count == train_counts[i]
 
     for k in 'train', 'valid', 'test':
-        sorted_file_path = os.path.join(args.cachedir,'sorted_' + k + '.npy')
+        sorted_file_path = os.path.join(args.cachedir, f'sorted_{k}.npy')
         np.save(sorted_file_path, getattr(corpus, k).astype(np.int32))
 
 

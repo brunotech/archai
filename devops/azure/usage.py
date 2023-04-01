@@ -37,8 +37,7 @@ def get_connection_string():
         if not CONNECTION_STRING:
             print(f"Please specify your {CONNECTION_NAME} environment variable.")
             sys.exit(1)
-        st = os.getenv('USAGE_TABLE_NAME')
-        if st:
+        if st := os.getenv('USAGE_TABLE_NAME'):
             USAGE_TABLE = st.strip()
             validate_table_name(USAGE_TABLE)
     return CONNECTION_STRING

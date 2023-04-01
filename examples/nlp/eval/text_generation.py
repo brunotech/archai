@@ -26,18 +26,13 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("prompt", type=str, help="Prompt to serve as the generation's context.")
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
 
-    device = "cpu"
-    if torch.cuda.is_available():
-        device = "cuda"
-
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = ArchaiPreTrainedTokenizerFast.from_pretrained(args.hub_tokenizer_path)
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
 

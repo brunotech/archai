@@ -66,8 +66,7 @@ class NasBench101CellBuilder(ModelDescBuilder):
     @overrides
     def build_nodes(self, stem_shapes:TensorShapes, conf_cell:Config,
                     cell_index:int, cell_type:CellType, node_count:int,
-                    in_shape:TensorShape, out_shape:TensorShape) \
-                        ->Tuple[TensorShapes, List[NodeDesc]]:
+                    in_shape:TensorShape, out_shape:TensorShape) -> Tuple[TensorShapes, List[NodeDesc]]:
 
         assert in_shape[0]==out_shape[0]
 
@@ -75,16 +74,12 @@ class NasBench101CellBuilder(ModelDescBuilder):
         conv_params = ConvMacroParams(in_shape[0], out_shape[0])
 
         for i in range(node_count):
-            edges = []
             input_ids = []
             first_proj = False # if input node is connected then it needs projection
             if self._cell_matrix[0, i+1]: # nadbench internal node starts at 1
                 input_ids.append(0) # connect to s0
                 first_proj = True
-            for j in range(i): # look at all internal vertex before us
-                if self._cell_matrix[j+1, i+1]: # if there is connection
-                    input_ids.append(j+2) # offset because of s0, s1
-
+            input_ids.extend(j+2 for j in range(i) if self._cell_matrix[j+1, i+1])
             op_desc = OpDesc('nasbench101_op',
                                 params={
                                     'conv': conv_params,
@@ -93,7 +88,7 @@ class NasBench101CellBuilder(ModelDescBuilder):
                                     'first_proj': first_proj
                                 }, in_len=len(input_ids), trainables=None, children=None) # TODO: should we pass children here?
             edge = EdgeDesc(op_desc, input_ids=input_ids)
-            edges.append(edge)
+            edges = [edge]
             nodes.append(NodeDesc(edges=edges, conv_params=conv_params))
 
         out_shapes = [copy.deepcopy(out_shape) for _  in range(node_count)]

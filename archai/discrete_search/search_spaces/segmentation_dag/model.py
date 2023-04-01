@@ -165,17 +165,18 @@ class SegmentationDagModel(torch.nn.Module):
 
             # Checks if the resolution of each node is correct
             assert inputs[in_node].shape[2] == int(res_h // self.graph[in_node]['scale']),\
-                'Input resolution does not match the node resolution.'
+                    'Input resolution does not match the node resolution.'
             assert inputs[in_node].shape[3] == int(res_w // self.graph[in_node]['scale']),\
-                'Input resolution does not match the node resolution.'
+                    'Input resolution does not match the node resolution.'
 
             inputs[out_node] = inputs[out_node] + module(inputs[in_node])
 
             assert inputs[out_node].shape[1] == self.channels_per_scale[self.graph[out_node]['scale']],\
-                'Output channel does not match the node channel scale.'
+                    'Output channel does not match the node channel scale.'
 
-        assert all(node in in_nodes for node in set(self.graph.keys()) - {'output'}),\
-            f'Unused nodes were detected: {set(self.graph.keys()) - in_nodes - set(["output"])}.'
+        assert all(
+            node in in_nodes for node in set(self.graph.keys()) - {'output'}
+        ), f'Unused nodes were detected: {set(self.graph.keys()) - in_nodes - {"output"}}.'
 
         output = self.post_upsample(self.up(inputs['output']))
         return self.classifier(output)

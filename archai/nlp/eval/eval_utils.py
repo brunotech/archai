@@ -98,7 +98,7 @@ class cached_property(property):
         if self.fget is None:
             raise AttributeError("Error when loading attribute")
 
-        attr = "__cached_" + self.fget.__name__
+        attr = f"__cached_{self.fget.__name__}"
 
         cached_obj = getattr(obj, attr, None)
         if cached_obj is None:

@@ -81,9 +81,7 @@ def allocate_folder(map, id):
 
 def read_lock(folder):
     lock_file = os.path.join(folder, "lock.txt")
-    if os.path.exists(lock_file):
-        return open(lock_file).read().strip()
-    return None
+    return open(lock_file).read().strip() if os.path.exists(lock_file) else None
 
 
 def main():
@@ -96,10 +94,7 @@ def main():
     map = load_map()
     print("# Found the following Qualcomm Devices using `adb devices`:")
     for id in find_devices():
-        if id in map:
-            folder = map[id]
-        else:
-            folder = allocate_folder(map, id)
+        folder = map[id] if id in map else allocate_folder(map, id)
         lock = read_lock(folder)
         print(f"Device {id}, mapped to folder {folder}")
         if id in screens:

@@ -112,10 +112,7 @@ def _conv_hook(
     overall_conv_macs = conv_per_position_macs * active_elements_count
     overall_conv_flops = 2 * overall_conv_macs
 
-    bias_flops = 0
-    if bias is not None:
-        bias_flops = out_channels * active_elements_count
-
+    bias_flops = out_channels * active_elements_count if bias is not None else 0
     return int(overall_conv_flops + bias_flops), int(overall_conv_macs)
 
 

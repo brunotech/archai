@@ -35,8 +35,7 @@ class Model(ArchModule):
         self.cells = nn.ModuleList()
         self._aux_towers = nn.ModuleList()
 
-        for i, (cell_desc, aux_tower_desc) in \
-                enumerate(zip(model_desc.cell_descs(), model_desc.aux_tower_descs)):
+        for cell_desc, aux_tower_desc in zip(model_desc.cell_descs(), model_desc.aux_tower_descs):
             self._build_cell(cell_desc, aux_tower_desc, droppath, affine)
 
         # adaptive pooling output size to 1x1
@@ -72,13 +71,12 @@ class Model(ArchModule):
             'ops': np.sum(len(n.edges) for c in self.desc.cell_descs() for n in c.nodes()),
         }
 
-    def ops(self)->Iterable[Op]:
+    def ops(self) -> Iterable[Op]:
         for cell in self.cells:
-            for op in cell.ops():
-                yield op
+            yield from cell.ops()
 
     @overrides
-    def forward(self, x)->Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, x) -> Tuple[Tensor, Optional[Tensor]]:
         #print(torch.cuda.memory_allocated()/1.0e6)
         s0 = self.model_stems[0](x)
         #print(torch.cuda.memory_allocated()/1.0e6)
@@ -86,7 +84,7 @@ class Model(ArchModule):
         #print(-1, s0.shape, s1.shape, torch.cuda.memory_allocated()/1.0e6)
 
         logits_aux = None
-        for ci, (cell, aux_tower) in enumerate(zip(self.cells, self._aux_towers)):
+        for cell, aux_tower in zip(self.cells, self._aux_towers):
             #print(s0.shape, s1.shape, end='')
             s0, s1 = s1, cell.forward(s0, s1)
             #print(ci, s0.shape, s1.shape, torch.cuda.memory_allocated()/1.0e6)

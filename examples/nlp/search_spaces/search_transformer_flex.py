@@ -21,9 +21,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("-od", "--output_dir", type=str, default="", help="Output folder.")
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

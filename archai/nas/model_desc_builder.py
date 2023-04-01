@@ -15,7 +15,7 @@ from archai.nas.operations import StemBase, Op
 
 
 class ModelDescBuilder(EnforceOverrides):
-    def get_reduction_indices(self, conf_model_desc:Config)->List[int]:
+    def get_reduction_indices(self, conf_model_desc:Config) -> List[int]:
         """ Returns cell indices which reduces HxW and doubles channels """
 
         n_cells:int = conf_model_desc['n_cells']
@@ -27,10 +27,9 @@ class ModelDescBuilder(EnforceOverrides):
 
         # for each reduction, we create one indice
         # for cifar and imagenet, reductions=2 creating cuts at n//3, n*2//3
-        return list(n_cells*(i+1) // (n_reductions+1) \
-                for i in range(n_reductions))
+        return [n_cells*(i+1) // (n_reductions+1) for i in range(n_reductions)]
 
-    def get_node_channels(self, conf_model_desc:Config)->List[List[int]]:
+    def get_node_channels(self, conf_model_desc:Config) -> List[List[int]]:
         """ Returns array of channels for each node in each cell. All nodes
             are assumed to have same output channels as input channels. """
 
@@ -51,7 +50,7 @@ class ModelDescBuilder(EnforceOverrides):
             if self.get_cell_type(ci)==CellType.Reduction:
                 node_channels *= 2
             # all nodes in a cell have same channels
-            nodes_channels = [node_channels for ni in range(n_nodes)]
+            nodes_channels = [node_channels for _ in range(n_nodes)]
             cell_node_channels.append(nodes_channels
                                       )
         return cell_node_channels
@@ -313,8 +312,7 @@ class ModelDescBuilder(EnforceOverrides):
         return CellType.Reduction if cell_index in self._reduction_indices \
                                   else CellType.Regular
 
-    def _post_op_ch(self, post_op_name:str, node_shapes:TensorShapes) \
-            ->Tuple[int, int, int]:
+    def _post_op_ch(self, post_op_name:str, node_shapes:TensorShapes) -> Tuple[int, int, int]:
 
         node_count = len(node_shapes)
         node_ch_out = self.get_ch(node_shapes[-1])
@@ -325,7 +323,7 @@ class ModelDescBuilder(EnforceOverrides):
         # means we cannot use cell stem outputs with node outputs because
         # concate will fail
         # TODO: remove hard coding of 2
-        out_states = node_count if node_count else 2
+        out_states = node_count or 2
 
         # number of input channels to the cell post op
         op_ch_in = out_states * node_ch_out
@@ -360,17 +358,18 @@ class ModelDescBuilder(EnforceOverrides):
         return out_shape, post_op_desc
 
     def build_aux_tower(self, out_shape:TensorShape, conf_model_desc:Config,
-                        cell_index:int)->Optional[AuxTowerDesc]:
+                        cell_index:int) -> Optional[AuxTowerDesc]:
         n_classes = self.get_conf_dataset()['n_classes']
         n_cells = conf_model_desc['n_cells']
         n_reductions = conf_model_desc['n_reductions']
-        aux_tower_stride = conf_model_desc['aux_tower_stride']
         aux_weight = conf_model_desc['aux_weight']
 
         # TODO: shouldn't we be adding aux tower at *every* 1/3rd?
         if aux_weight and n_reductions > 1 and cell_index == 2*n_cells//3:
+            aux_tower_stride = conf_model_desc['aux_tower_stride']
             return AuxTowerDesc(self.get_ch(out_shape), n_classes, aux_tower_stride)
-        return None
+        else:
+            return None
 
     def build_model_stems(self, in_shapes:TensorShapesList,
             conf_model_desc:Config)->List[OpDesc]:
@@ -407,11 +406,11 @@ class ModelDescBuilder(EnforceOverrides):
         return stems
 
     @staticmethod
-    def _stem_reductions(stems:List[OpDesc])->List[int]:
+    def _stem_reductions(stems:List[OpDesc]) -> List[int]:
         # create stem ops to find out reduction factors
         ops = [Op.create(stem, affine=False) for stem in stems]
         assert all(isinstance(op, StemBase) for op in ops)
-        return list(op.reduction for op in ops)
+        return [op.reduction for op in ops]
 
     def pre_build(self, conf_model_desc:Config)->None:
         """hook for accomplishing any setup before build starts"""

@@ -18,7 +18,6 @@ ImgSize = Optional[Union[int, Tuple[int, int]]]
 class DatasetProvider(EnforceOverrides):
     def __init__(self, conf_dataset:Config):
         super().__init__()
-        pass
 
     @abstractmethod
     def get_datasets(self, load_train:bool, load_test:bool,

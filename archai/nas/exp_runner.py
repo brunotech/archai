@@ -110,11 +110,15 @@ class ExperimentRunner(ABC, EnforceOverrides):
         common.update_envvars(conf) # config paths might include env vars
         return conf
 
-    def _init_conf(self, is_search_or_eval:bool, clean_expdir:bool)->Config:
+    def _init_conf(self, is_search_or_eval:bool, clean_expdir:bool) -> Config:
         config_filename = self.config_filename
 
-        conf = common.common_init(config_filepath=config_filename,
-            param_args=['--common.experiment_name', self.get_expname(is_search_or_eval),
-                        ], clean_expdir=clean_expdir)
-        return conf
+        return common.common_init(
+            config_filepath=config_filename,
+            param_args=[
+                '--common.experiment_name',
+                self.get_expname(is_search_or_eval),
+            ],
+            clean_expdir=clean_expdir,
+        )
 

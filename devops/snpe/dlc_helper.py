@@ -13,7 +13,7 @@ def view_model(dlc_file):
     dir = os.path.dirname(dlc_file)
     filename = os.path.basename(dlc_file)
     basename = os.path.splitext(filename)[0]
-    html_file = os.path.join(dir, basename + ".html")
+    html_file = os.path.join(dir, f"{basename}.html")
     shell = Shell()
     shell.run(os.getcwd(), f"snpe-dlc-viewer -i {dlc_file} -s {html_file}", True)
     return html_file
@@ -26,7 +26,7 @@ def get_dlc_metrics(html):
     macs = None
     params = None
     with open(html, 'r', encoding='utf-8') as f:
-        for line in f.readlines():
+        for line in f:
             if TOTAL_MACS in line:
                 i = line.index(TOTAL_MACS)
                 macs = line[i + len(TOTAL_MACS):].split('(')[0].strip()

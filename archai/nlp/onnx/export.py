@@ -77,7 +77,7 @@ def validate_onnx_outputs(
             onnx_inputs[name] = value.numpy()
 
     # Performs the ONNX inference session
-    onnx_named_outputs = [output for output in onnx_config.outputs.keys()]
+    onnx_named_outputs = list(onnx_config.outputs.keys())
     onnx_outputs = session.run(onnx_named_outputs, onnx_inputs)
 
     # Checks whether subset of ONNX outputs is valid
@@ -95,7 +95,7 @@ def validate_onnx_outputs(
 
         ref_value = ref_outputs_dict[name].detach().numpy()
 
-        if not ort_value.shape == ref_value.shape:
+        if ort_value.shape != ref_value.shape:
             error = f"Unmatched shape: {ort_value.shape} (ONNX) and {ref_value.shape} (reference)"
             logger.error(error)
             raise ValueError(error)
@@ -149,7 +149,9 @@ def export_to_onnx(
     )
 
     model = prepare_model_for_onnx(model, model_type)
-    dynamic_axes = {name: axes for name, axes in chain(onnx_config.inputs.items(), onnx_config.outputs.items())}
+    dynamic_axes = dict(
+        chain(onnx_config.inputs.items(), onnx_config.outputs.items())
+    )
 
     torch.onnx.export(
         model,

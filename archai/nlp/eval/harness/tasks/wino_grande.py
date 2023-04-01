@@ -46,7 +46,7 @@ class WinoGrandeHarnessTask(HarnessTask):
 
     def _create_inputs(self, sample: Dict[str, Any]) -> str:
         answer = sample["answer"]
-        option = sample["option" + answer]
+        option = sample[f"option{answer}"]
 
         return self._get_partial_context_from_sample(sample["sentence"], option)
 

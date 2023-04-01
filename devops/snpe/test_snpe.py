@@ -79,17 +79,18 @@ def onnx_to_dlc(model, model_dir):
     if len(shape) == 4:
         shape = shape[1:]  # trim off batch dimension
     layout = _get_input_layout(shape)
-    input_shape = ",".join([str(i) for i in input_meta.shape])
     output_dlc = f"{model_dir}/{basename}.dlc"
     # snpe-onnx-to-dlc changes the model input to NHWC.
     dlc_shape = shape if layout == 'NHWC' else [shape[1], shape[2], shape[0]]
 
-    command = "snpe-onnx-to-dlc " + \
-        f"-i \"{model}\" " + \
-        f"-d {input_meta.name} \"{input_shape}\" " + \
-        f"--input_layout {input_meta.name} {layout} " + \
-        f"--out_node \"{output_meta.name}\" " + \
-        f"-o \"{output_dlc}\" "
+    input_shape = ",".join([str(i) for i in input_meta.shape])
+    command = (
+        f'snpe-onnx-to-dlc -i \"{model}\" '
+        + f'-d {input_meta.name} \"{input_shape}\" '
+        + f"--input_layout {input_meta.name} {layout} "
+        + f'--out_node \"{output_meta.name}\" '
+        + f'-o \"{output_dlc}\" '
+    )
 
     print(command)
 
@@ -129,14 +130,12 @@ def convert_model(model, model_dir, input_shape=None):
         if not input_shape:
             input_shape = [256, 256, 3]
         if '.quant' in model:
-            # already quantized, has to be in the model_dir
             if os.path.dirname(model) == model_dir:
                 return [model, input_shape, True, None]
-            else:
-                newfile = os.path.join(model_dir, os.path.basename(model))
-                if model != newfile:
-                    copyfile(model, newfile)
-                return [newfile, input_shape, True, None]
+            newfile = os.path.join(model_dir, os.path.basename(model))
+            if model != newfile:
+                copyfile(model, newfile)
+            return [newfile, input_shape, True, None]
 
     if model is None:
         return [None, None, False, f"### Model extension {ext} not supported"]
@@ -175,18 +174,18 @@ def quantize_model(model, model_dir):
             error = str(ex)
         return [None, error]
 
-    if not os.path.isfile(output_model):
-        return [None, "### Model conversion failed"]
-
-    return [output_model, None]
+    return (
+        [output_model, None]
+        if os.path.isfile(output_model)
+        else [None, "### Model conversion failed"]
+    )
 
 
 def adb(cmd):
     if DEVICE:
         return f"adb -s {DEVICE} {cmd}"
-    else:
-        print("Please specify the --device to use")
-        sys.exit(1)
+    print("Please specify the --device to use")
+    sys.exit(1)
 
 
 def download_results(input_images, start, output_dir):
@@ -206,7 +205,7 @@ def download_results(input_images, start, output_dir):
     for name in input_images:
         line = f"Result_{index}"
         if line in result:
-            raw_file = os.path.splitext(name)[0] + '.raw'
+            raw_file = f'{os.path.splitext(name)[0]}.raw'
             index += 1
             if not output_filename:
                 cmd = adb(f"shell ls {DEVICE_WORKING_DIR}/{TASK}/{MODEL}/output/{line}/")
@@ -216,7 +215,7 @@ def download_results(input_images, start, output_dir):
             device_result = f"{DEVICE_WORKING_DIR}/{TASK}/{MODEL}/output/{line}/{output_filename}"
             rc = shell.run(output_dir, adb(f"pull {device_result} {raw_file}"), False)
             if "error:" in rc:
-                print("### error downloading results: " + rc)
+                print(f"### error downloading results: {rc}")
                 sys.exit(1)
 
 
@@ -224,14 +223,14 @@ def get_target_arch(snpe_root):
     global SNPE_ROOT
     SNPE_ROOT = snpe_root
     if not os.path.isdir(snpe_root):
-        print("SNPE_ROOT folder {} not found".format(snpe_root))
+        print(f"SNPE_ROOT folder {snpe_root} not found")
         sys.exit(1)
     for name in os.listdir(os.path.join(snpe_root, 'lib')):
         if name.startswith('aarch64-android'):
             print(f"Using SNPE_TARGET_ARCH {name}")
             return name
 
-    print("SNPE_ROOT folder {} missing aarch64-android-*".format(snpe_root))
+    print(f"SNPE_ROOT folder {snpe_root} missing aarch64-android-*")
     sys.exit(1)
 
 
@@ -326,7 +325,7 @@ def setup_model(model):
 def get_setup():
     global snpe_target_arch
     if not snpe_target_arch:
-        print(f"snpe_target_arch is not set")
+        print("snpe_target_arch is not set")
         sys.exit(1)
 
     lib_path = f"{DEVICE_WORKING_DIR}/dsp/lib;/system/lib/rfsa/adsp;/system/vendor/lib/rfsa/adsp;/dsp"
@@ -348,7 +347,7 @@ def run_test(model):
 
     global snpe_target_arch
     if not snpe_target_arch:
-        print(f"snpe_target_arch is not set")
+        print("snpe_target_arch is not set")
         sys.exit(1)
 
     shell = Shell()
@@ -394,7 +393,7 @@ def generate_random_inputs(count, shape):
     with open(input_list_path, 'w', encoding='utf-8') as input_list:
         for i in range(count):
             rand_raw = np.random.uniform(-1.0, +1.0, random_data_dim).astype(np.float32)
-            raw_filepath = os.path.join(RANDOM_INPUTS, 'random_input_' + str(i) + '.raw')
+            raw_filepath = os.path.join(RANDOM_INPUTS, f'random_input_{str(i)}.raw')
             input_list.write(raw_filepath + "\n")
             with open(raw_filepath, 'wb') as fid:
                 fid.write(rand_raw)
@@ -408,7 +407,7 @@ def get_memlog_usage(benchmark_dir):
         memlog = os.path.join(benchmark_dir, 'results', 'latest_results', 'mem', 'DSP_ub_tf8', f'Run{i}', 'MemLog.txt')
         if os.path.isfile(memlog):
             try:
-                for line in open(memlog, 'r', encoding='utf-8').readlines():
+                for line in open(memlog, 'r', encoding='utf-8'):
                     if 'Realtime:' in line:
                         parts = line.strip().split(' ')
                         try:
@@ -555,7 +554,7 @@ def run_batches(model, snpe_root, images, output_dir):
     if os.path.isdir(output_dir):
         rmtree(output_dir)
 
-    print("Found {} input files".format(len(files)))
+    print(f"Found {len(files)} input files")
     start = 0
     while start < len(files):
         if start + MAX_BATCH_SIZE < len(files):
@@ -609,9 +608,9 @@ if __name__ == '__main__':
     snpe = args.snpe
     if not snpe:
         snpe = os.getenv("SNPE_ROOT")
-        if not snpe:
-            print("please set your SNPE_ROOT environment variable, see readme.md")
-            sys.exit(1)
+    if not snpe:
+        print("please set your SNPE_ROOT environment variable, see readme.md")
+        sys.exit(1)
 
     snpe_target_arch = get_target_arch(snpe)
 

@@ -35,19 +35,17 @@ class ArchModule(nn.Module, ABC, EnforceOverrides):
             raise RuntimeError('Arch parameters for this module already exist')
         self._arch_params = arch_params
 
-    def arch_params(self, recurse=False, only_owned=False)->ArchParams:
-        # note that we will cache lists on first calls, this doesn't allow
-        # dynamic parameters but it makes this frequent calls much faster
+    def arch_params(self, recurse=False, only_owned=False) -> ArchParams:
         if not recurse:
-            if not only_owned:
-                return self._arch_params
-            else:
-                return ArchParams.from_module(self, recurse=False)
+            return (
+                ArchParams.from_module(self, recurse=False)
+                if only_owned
+                else self._arch_params
+            )
+        if not only_owned:
+            raise NotImplementedError('Recursively getting shared and owned arch params not implemented yet')
         else:
-            if not only_owned:
-                raise NotImplementedError('Recursively getting shared and owned arch params not implemented yet')
-            else:
-                return ArchParams.from_module(self, recurse=True)
+            return ArchParams.from_module(self, recurse=True)
 
     def all_owned(self)->ArchParams:
         return self.arch_params(recurse=True, only_owned=True)

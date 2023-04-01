@@ -234,16 +234,14 @@ class OnnxConfigWithPast(OnnxConfig):
         if self.use_past:
             # [past_key_values, batch_size, n_head, past_seq_len, d_head]
             dummy_inputs["past_key_values"] = tuple(
-                [
-                    torch.zeros(
-                        self.config.past_key_values,
-                        batch_size,
-                        self.num_attention_heads,
-                        past_seq_len,
-                        self.hidden_size // self.num_attention_heads,
-                    )
-                    for _ in range(self.num_layers)
-                ]
+                torch.zeros(
+                    self.config.past_key_values,
+                    batch_size,
+                    self.num_attention_heads,
+                    past_seq_len,
+                    self.hidden_size // self.num_attention_heads,
+                )
+                for _ in range(self.num_layers)
             )
 
         return dummy_inputs

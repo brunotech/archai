@@ -61,9 +61,9 @@ def map_dataset_to_dict(
     splits = [_adjust_split_name(split) for split in splits]
 
     if isinstance(dataset[0], Dataset):
-        dataset = DatasetDict({s: d for s, d in zip(splits, dataset)})
+        dataset = DatasetDict(dict(zip(splits, dataset)))
     elif isinstance(dataset[0], IterableDataset):
-        dataset = IterableDatasetDict({s: d for s, d in zip(splits, dataset)})
+        dataset = IterableDatasetDict(dict(zip(splits, dataset)))
 
     return dataset
 
@@ -87,12 +87,12 @@ def merge_datasets(
 
     available_splits = [list(dataset) for dataset in datasets]
     assert all(
-        [available_splits[0] == splits for splits in available_splits]
+        available_splits[0] == splits for splits in available_splits
     ), f"`datasets` must have identical splits: {available_splits}."
 
     available_typing = [type(dataset) for dataset in datasets]
     assert all(
-        [available_typing[0] == typing for typing in available_typing]
+        available_typing[0] == typing for typing in available_typing
     ), f"`datasets` must have identical types: {available_typing}."
 
     if isinstance(datasets[0], DatasetDict):
@@ -210,12 +210,13 @@ def tokenize_contiguous_dataset(
     if total_length >= model_max_length:
         total_length = (total_length // model_max_length) * model_max_length
 
-    result = {
-        k: [t[i : i + model_max_length] for i in range(0, total_length, model_max_length)]
+    return {
+        k: [
+            t[i : i + model_max_length]
+            for i in range(0, total_length, model_max_length)
+        ]
         for k, t in concatenated_examples.items()
     }
-
-    return result
 
 
 def tokenize_nsp_dataset(

@@ -29,7 +29,9 @@ def inception_v3(pretrained=False, progress=True, device='cpu', **kwargs):
     model = Inception3()
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/inception_v3.pt', map_location=device)
+        state_dict = torch.load(
+            f'{script_dir}/state_dicts/inception_v3.pt', map_location=device
+        )
         model.load_state_dict(state_dict)
     return model
 
@@ -131,9 +133,7 @@ class Inception3(nn.Module):
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
-        if self.training and self.aux_logits:
-            return _InceptionOuputs(x, aux)
-        return x
+        return _InceptionOuputs(x, aux) if self.training and self.aux_logits else x
 
 
 class InceptionA(nn.Module):

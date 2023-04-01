@@ -110,12 +110,14 @@ class Predictor:
 
         """
 
-        if len(input_ids) > 0 and self.tokenizer[input_ids[-1]][-1] in SEPARATOR_TOKENS_SET:
+        if input_ids and self.tokenizer[input_ids[-1]][-1] in SEPARATOR_TOKENS_SET:
             return True
 
         probs = self.model.get_probs(input_ids)
         probs_sum = sum(
-            [prob for idx, prob in enumerate(probs) if idx in self.tokenizer.TOKENIZER_WORD_TOKEN_SEPARATOR]
+            prob
+            for idx, prob in enumerate(probs)
+            if idx in self.tokenizer.TOKENIZER_WORD_TOKEN_SEPARATOR
         )
 
         return probs_sum > Predictor.COMPLETE_WORD_PROB_THRESHOLD
@@ -163,10 +165,7 @@ class Predictor:
         if prediction.end_with_complete_word is None:
             self._update_end_with_complete_word(prediction)
 
-        if not prediction.end_with_complete_word:
-            return False
-
-        return True
+        return bool(prediction.end_with_complete_word)
 
     @functools.lru_cache(maxsize=1024)
     def _initial_filter_next_tokens(
@@ -300,7 +299,7 @@ class Predictor:
         # If empty or first suggestion does not complete the token,
         # do not go in (i.e. maintain empty result)
         if len(filtered_tokens) > 0 and filtered_tokens[0][2] >= 0:
-            probs_sum = sum([prob for _, prob, _ in filtered_tokens])
+            probs_sum = sum(prob for _, prob, _ in filtered_tokens)
             idxs, prob, filtered_length = filtered_tokens[0]
 
             text = self.tokenizer.decode(idxs)[len(prefix) :]

@@ -11,7 +11,7 @@ import logging
 _stats:Dict[str, Statistics] = {}
 _lasts:Dict[str, float] = {}
 
-def add_timing(name:str, elapsed:float, no_print=True)->Statistics:
+def add_timing(name:str, elapsed:float, no_print=True) -> Statistics:
     global _stats
     global _lasts
 
@@ -23,7 +23,7 @@ def add_timing(name:str, elapsed:float, no_print=True)->Statistics:
     _lasts[name] = elapsed
 
     if not no_print:
-        logging.info('Timing "{}": {}s'.format(name, elapsed))
+        logging.info(f'Timing "{name}": {elapsed}s')
     return stats
 
 def get_last(name:str)->float:

@@ -7,7 +7,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 fruits = []
 name_file = os.path.join(script_dir, 'names.txt')
 with open(name_file, 'r') as f:
-    for line in f.readlines():
+    for line in f:
         line = line.strip()
         if line and line not in fruits:
             fruits += [line]

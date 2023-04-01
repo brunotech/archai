@@ -52,10 +52,8 @@ def add_named_augs(transform_train, aug:Union[List, str], cutout:int):
             transform_train.transforms.insert(0, Augmentation(autoaug_paper_cifar10()))
         elif aug == 'autoaug_extend':
             transform_train.transforms.insert(0, Augmentation(autoaug_policy()))
-        elif aug in ['default', 'inception', 'inception320']:
-            pass
-        else:
-            raise ValueError('Augmentations not found: %s' % aug)
+        elif aug not in ['default', 'inception', 'inception320']:
+            raise ValueError(f'Augmentations not found: {aug}')
 
     # add cutout transform
     # TODO: use PyTorch built-in cutout
@@ -506,15 +504,12 @@ def remove_deplicates(policies):
     s = set()
     new_policies = []
     for ops in policies:
-        key = []
-        for op in ops:
-            key.append(op[0])
+        key = [op[0] for op in ops]
         key = '_'.join(key)
         if key in s:
             continue
-        else:
-            s.add(key)
-            new_policies.append(ops)
+        s.add(key)
+        new_policies.append(ops)
 
     return new_policies
 

@@ -55,8 +55,8 @@ class ConvexHullPoint:
         ConvexHullPoint._id = random.randint(0, 2147483648)
         self.id = ConvexHullPoint._id
 
-    def is_trained_stage(self)->bool:
-        return self.job_stage==JobStage.SEARCH_TRAINED or self.job_stage==JobStage.SEED_TRAINED
+    def is_trained_stage(self) -> bool:
+        return self.job_stage in [JobStage.SEARCH_TRAINED, JobStage.SEED_TRAINED]
 
     def next_stage(self)->JobStage:
         return JobStage(self.job_stage.value+1)
@@ -68,9 +68,7 @@ def _is_on_ray_left(x1, y1, x2, y2, x3, y3, inclusive=False, epsilon=0):
     If otherwise, then the answer is strictly left.
     """
     val = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)
-    if inclusive:
-        return val >= epsilon
-    return val > epsilon
+    return val >= epsilon if inclusive else val > epsilon
 
 
 def _convex_hull_from_points(xs, ys, eps=None, allow_increase=False):
@@ -101,10 +99,11 @@ def _convex_hull_from_points(xs, ys, eps=None, allow_increase=False):
         while len(idxs) > 1:
             x2, y2 = xs[idxs[-1]], ys[idxs[-1]]
             x3, y3 = xs[idxs[-2]], ys[idxs[-2]]
-            if not _is_on_ray_left(x1, y1, x2, y2, x3, y3):
-                if np.abs(x1 - x2) > 1e-6 or np.abs(y1 - y2) > 1e-6:
-                    # this ensures that the no points are duplicates
-                    break
+            if not _is_on_ray_left(x1, y1, x2, y2, x3, y3) and (
+                np.abs(x1 - x2) > 1e-6 or np.abs(y1 - y2) > 1e-6
+            ):
+                # this ensures that the no points are duplicates
+                break
             del idxs[-1]
         return idxs
 
@@ -238,8 +237,7 @@ def _convex_hull_insert(hull_xs, hull_ys, x, y, eps=0.0, eg_xs=[], eg_ys=[]):
     for li in reversed(range(1, idx)):
         x3, x2 = hull_xs[li-1:li+1]
         y3, y2 = hull_ys[li-1:li+1]
-        to_rm_li = _is_on_ray_left(x, y, x2, y2, x3, y3, inclusive=False)
-        if to_rm_li:
+        if to_rm_li := _is_on_ray_left(x, y, x2, y2, x3, y3, inclusive=False):
             slice_left = li
         else:
             break
@@ -328,12 +326,11 @@ def _test_convex_hull_insert():
         dpi=plt.gcf().dpi, bbox_inches='tight')
 
 def model_descs_on_front(hull_points:List[ConvexHullPoint], convex_hull_eps:float, 
-                         stage:ExperimentStage, lower_hull:bool=True)\
-        ->Tuple[List[ConvexHullPoint], List[ConvexHullPoint], List[float], List[float]]:
-    assert(len(hull_points) > 0)
+                         stage:ExperimentStage, lower_hull:bool=True) -> Tuple[List[ConvexHullPoint], List[ConvexHullPoint], List[float], List[float]]:
+    assert hull_points
 
     top1_list = get_top1_for_stage(hull_points, stage)
-    
+
     xs = [point.model_stats.MAdd for point in hull_points]
     ys = [1.0-top1 if lower_hull else top1 for top1 in top1_list]
 
@@ -343,7 +340,7 @@ def model_descs_on_front(hull_points:List[ConvexHullPoint], convex_hull_eps:floa
 
     return front_points, eps_points, xs, ys
 
-def hull_points2tsv(points:List[ConvexHullPoint])->str:
+def hull_points2tsv(points:List[ConvexHullPoint]) -> str:
     lines = ['\t'.join(['id', 'job_stage',
                         'cells', 'reductions', 'nodes',
                         'MAdd', 'flops', 'duration',
@@ -358,17 +355,14 @@ def hull_points2tsv(points:List[ConvexHullPoint])->str:
         cells, reductions, nodes = p.cells_reductions_nodes
         mstats, metrics = p.model_stats, p.metrics
 
-        vals = []
-        vals.extend([p.id, JobStage(p.job_stage).name])
-
-        # add macro
-        vals.extend([cells, reductions, nodes])
-
-        # add model stats
-        vals.extend([mstats.MAdd, mstats.Flops, mstats.duration])
-        vals.extend([mstats.mread, mstats.mwrite])
-        vals.extend([mstats.inference_memory, mstats.parameters])
-
+        vals = [
+            p.id,
+            JobStage(p.job_stage).name,
+            *[cells, reductions, nodes],
+            *[mstats.MAdd, mstats.Flops, mstats.duration],
+            *[mstats.mread, mstats.mwrite],
+            *[mstats.inference_memory, mstats.parameters],
+        ]
         # add metrics
         train_metrics, val_metrics, test_metrics = metrics.run_metrics.best_epoch()
         vals.extend([train_metrics.index, train_metrics.top1.avg])
@@ -391,7 +385,7 @@ def hull_points2tsv(points:List[ConvexHullPoint])->str:
     return '\n'.join(lines)
 
 def sample_from_hull(hull_points:List[ConvexHullPoint], convex_hull_eps:float, 
-                     stage:ExperimentStage=ExperimentStage.SEARCH)->ConvexHullPoint:
+                     stage:ExperimentStage=ExperimentStage.SEARCH) -> ConvexHullPoint:
     front_points, eps_points, xs, ys = model_descs_on_front(hull_points,
         convex_hull_eps, stage)
 
@@ -421,10 +415,7 @@ def sample_from_hull(hull_points:List[ConvexHullPoint], convex_hull_eps:float,
     eps_madds = [point.model_stats.MAdd for point in eps_points]
     madd_max = max(eps_madds)
     madd_min = min(eps_madds)
-    if madd_max == madd_min:
-        madd_range = madd_max
-    else:
-        madd_range = madd_max - madd_min
+    madd_range = madd_max if madd_max == madd_min else madd_max - madd_min
     # to prevent division by 0
     if madd_range == 0:
         madd_range = 1
@@ -441,15 +432,14 @@ def sample_from_hull(hull_points:List[ConvexHullPoint], convex_hull_eps:float,
 
     return sampled_point
 
-def get_top1_for_stage(hull_points:List[ConvexHullPoint], stage:ExperimentStage)->List[float]:
+def get_top1_for_stage(hull_points:List[ConvexHullPoint], stage:ExperimentStage) -> List[float]:
     '''Return top1 accuracy according to the experiment stage (SEARCH or EVAL)'''
 
-    if stage == ExperimentStage.SEARCH:
-        top1_list = [point.metrics.best_val_top1() for point in hull_points]
-    else:
-        top1_list = [point.metrics.best_test_top1() for point in hull_points]
-
-    return top1_list
+    return (
+        [point.metrics.best_val_top1() for point in hull_points]
+        if stage == ExperimentStage.SEARCH
+        else [point.metrics.best_test_top1() for point in hull_points]
+    )
 
 def plot_frontier(hull_points:List[ConvexHullPoint], convex_hull_eps:float,
                    expdir:str, stage:ExperimentStage=ExperimentStage.SEARCH)->None:
@@ -482,9 +472,9 @@ def plot_frontier(hull_points:List[ConvexHullPoint], convex_hull_eps:float,
         dpi=plt.gcf().dpi, bbox_inches='tight')
 
 def plot_pool(hull_points:List[ConvexHullPoint], expdir:str,
-              stage:ExperimentStage=ExperimentStage.SEARCH)->None:
+              stage:ExperimentStage=ExperimentStage.SEARCH) -> None:
 
-    assert(len(hull_points) > 0)
+    assert hull_points
 
     xs_madd = []
     xs_flops = []
@@ -526,10 +516,10 @@ def plot_pool(hull_points:List[ConvexHullPoint], expdir:str,
 
 
 
-def plot_seed_model_stats(seed_model_stats:List[ModelStats], expdir:str)->None:
+def plot_seed_model_stats(seed_model_stats:List[ModelStats], expdir:str) -> None:
     xs_madd = [p.MAdd for p in seed_model_stats]
     xs_madd_m = [x/1e6 for x in xs_madd]
-    ys_zero = [0 for x in xs_madd]
+    ys_zero = [0 for _ in xs_madd]
 
     madds_plot_filename = os.path.join(expdir, 'seed_models_madds.png')
     plt.clf()

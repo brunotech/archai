@@ -17,22 +17,22 @@ class NatsbenchMetric(Objective):
                  more_info_kwargs: Optional[Dict[str, Any]] = None,
                  cost_info_kwargs: Optional[Dict[str, Any]] = None):
         assert isinstance(search_space, NatsbenchTssSearchSpace), \
-            'This objective function only works with architectures from NatsbenchTssSearchSpace'
+                'This objective function only works with architectures from NatsbenchTssSearchSpace'
 
         self.search_space = search_space
         self.metric_name = metric_name
         self.higher_is_better = higher_is_better
         self.epochs = epochs
 
-        self.archid_pattern = re.compile(f'natsbench-tss-([0-9]+)')
+        self.archid_pattern = re.compile('natsbench-tss-([0-9]+)')
         self.api = nats_bench.create(
             str(self.search_space.natsbench_location),
             'tss', fast_mode=True, verbose=False
         )
 
         self.raise_not_found = raise_not_found
-        self.more_info_kwargs = more_info_kwargs or dict()
-        self.cost_info_kwargs = cost_info_kwargs or dict()
+        self.more_info_kwargs = more_info_kwargs or {}
+        self.cost_info_kwargs = cost_info_kwargs or {}
         self.total_time_spent = 0
 
     @overrides
@@ -48,9 +48,9 @@ class NatsbenchMetric(Objective):
                     'Please refer to `archai.search_spaces.discrete.NatsbenchSearchSpace` to '
                     'use the Natsbench search space.'
                 )
-            
+
             return None
-        
+
         info = self.api.get_more_info(
             int(natsbench_id.group(1)), dataset=self.search_space.base_dataset,
             iepoch=budget or self.epochs, **self.more_info_kwargs
@@ -68,7 +68,7 @@ class NatsbenchMetric(Objective):
             result = info[self.metric_name]
         else:
             raise KeyError(
-                f'`metric_name` {self.metric_name} not found. Available metrics = {str(list(info.keys()))}'
+                f'`metric_name` {self.metric_name} not found. Available metrics = {list(info.keys())}'
             )
 
         return result

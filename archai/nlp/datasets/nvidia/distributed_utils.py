@@ -80,34 +80,36 @@ def all_reduce(tensor: Union[int, float, torch.Tensor], op: Optional[str] = "sum
 
     """
 
-    if torch.distributed.is_available() and torch.distributed.is_initialized():
-        if op == "sum" or op == "mean":
-            torch_op = torch.distributed.ReduceOp.SUM
-        elif op == "min":
-            torch_op = torch.distributed.ReduceOp.MIN
-        elif op == "max":
-            torch_op = torch.distributed.ReduceOp.MAX
-        elif op == "product":
-            torch_op = torch.distributed.ReduceOp.PRODUCT
-        else:
-            raise RuntimeError(f"Operator: {op} is not supported yet.")
+    if (
+        not torch.distributed.is_available()
+        or not torch.distributed.is_initialized()
+    ):
+        return tensor
+    if op in ["sum", "mean"]:
+        torch_op = torch.distributed.ReduceOp.SUM
+    elif op == "min":
+        torch_op = torch.distributed.ReduceOp.MIN
+    elif op == "max":
+        torch_op = torch.distributed.ReduceOp.MAX
+    elif op == "product":
+        torch_op = torch.distributed.ReduceOp.PRODUCT
+    else:
+        raise RuntimeError(f"Operator: {op} is not supported yet.")
 
-        backend = torch.distributed.get_backend()
-        if backend == torch.distributed.Backend.NCCL:
-            device = torch.device("cuda")
-        elif backend == torch.distributed.Backend.GLOO:
-            device = torch.device("cpu")
-        else:
-            raise RuntimeError(f"Distributed backend: {backend} is not supported yet.")
+    backend = torch.distributed.get_backend()
+    if backend == torch.distributed.Backend.NCCL:
+        device = torch.device("cuda")
+    elif backend == torch.distributed.Backend.GLOO:
+        device = torch.device("cpu")
+    else:
+        raise RuntimeError(f"Distributed backend: {backend} is not supported yet.")
 
-        tensor = torch.tensor(tensor, device=device)
-        torch.distributed.all_reduce(tensor, torch_op)
-        if op == "mean":
-            tensor /= get_world_size()
+    tensor = torch.tensor(tensor, device=device)
+    torch.distributed.all_reduce(tensor, torch_op)
+    if op == "mean":
+        tensor /= get_world_size()
 
-        return tensor.item()
-
-    return tensor
+    return tensor.item()
 
 
 @contextmanager
@@ -119,7 +121,5 @@ def sync_workers() -> Generator[int, None, None]:
 
     """
 
-    rank = get_rank()
-    yield rank
-
+    yield get_rank()
     barrier()

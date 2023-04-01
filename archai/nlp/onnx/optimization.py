@@ -54,16 +54,14 @@ def optimize_onnx(
     if opt_level > 0:
         disabled_optimizers = []
 
-        if opt_level > 1:
-            # Disables some optimizers that might influence shape inference/attention fusion
-            if not only_ort:
-                disabled_optimizers = [
-                    "MatMulScaleFusion",
-                    "MatMulAddFusion",
-                    "SimplifiedLayerNormFusion",
-                    "GemmActivationFusion",
-                    "BiasSoftmaxFusion",
-                ]
+        if opt_level > 1 and not only_ort:
+            disabled_optimizers = [
+                "MatMulScaleFusion",
+                "MatMulAddFusion",
+                "SimplifiedLayerNormFusion",
+                "GemmActivationFusion",
+                "BiasSoftmaxFusion",
+            ]
 
         # Performs the standard ORT optimization
         ort_model_path = create_file_name_identifier(onnx_model_path, "-ort")

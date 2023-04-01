@@ -35,7 +35,7 @@ def check_mit67(dataroot: str) -> bool:
 
     num_train_files = 0
     for base, dirs, files in os.walk(train):
-        for file in files:
+        for _ in files:
             num_train_files += 1
 
     if num_train_files != 12466:
@@ -43,14 +43,10 @@ def check_mit67(dataroot: str) -> bool:
 
     num_test_files = 0
     for base, dirs, files in os.walk(test):
-        for file in files:
+        for _ in files:
             num_test_files += 1
 
-    if num_test_files != 3153:
-        return False
-
-    # all checks passed
-    return True
+    return num_test_files == 3153
 
 
 def download(dataroot: str):
@@ -92,8 +88,7 @@ def load_train_csv_data(filename: str) -> Dict[str, List[str]]:
 
 def copy_data_helper(data: Dict[str, List[str]], imagesroot: str, foldername: str) -> None:
 
-    for key in data.keys():
-        images = data[key]
+    for key, images in data.items():
         for im in images:
             if not im:
                 continue
@@ -117,7 +112,7 @@ def prepare_data(mit67_root: str):
     train_data = defaultdict(list)
     for tf in train_files:
         this_data = load_train_csv_data(tf)
-        train_data.update(this_data)
+        train_data |= this_data
 
     # make classname directories for train and test
     for key in test_data.keys():

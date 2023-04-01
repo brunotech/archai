@@ -81,7 +81,7 @@ def evaluate_models(models: List[ArchaiModel],
             if not isinstance(budget, list):
                 budgets[obj_name] = [budget] * len(models)
 
-    objective_results = dict()
+    objective_results = {}
     inputs = list(enumerate(zip(models, dataset_providers)))
 
     sync_objectives = [t for t in objectives.items() if isinstance(t[1], Objective)]
@@ -90,13 +90,13 @@ def evaluate_models(models: List[ArchaiModel],
     # Dispatches jobs for all async objectives first
     for obj_name, obj in async_objectives:
         pbar = tqdm(inputs, desc=f'Dispatching jobs for "{obj_name}"...')
-        
+
         for arch_idx, (arch, dataset) in pbar:
             if budgets:
                 obj.send(arch, dataset, budget=budgets[obj_name][arch_idx])
             else:
                 obj.send(arch, dataset)
-    
+
     # Calculates synchronous objectives in order
     for obj_name, obj in sync_objectives:
         pbar = tqdm(inputs, desc=f'Calculating "{obj_name}"...')
@@ -113,7 +113,9 @@ def evaluate_models(models: List[ArchaiModel],
             ], dtype=np.float64)
 
     # Gets results from async objectives
-    pbar = tqdm(async_objectives, desc=f'Gathering results from async objectives...')
+    pbar = tqdm(
+        async_objectives, desc='Gathering results from async objectives...'
+    )
     for obj_name, obj in pbar:
         objective_results[obj_name] = np.array(obj.fetch_all(), dtype=np.float64)
 

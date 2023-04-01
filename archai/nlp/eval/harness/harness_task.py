@@ -140,7 +140,7 @@ class HarnessTask:
 
         """
 
-        return bool("train" in self.dataset)
+        return "train" in self.dataset
 
     @cached_property
     def train_set(self) -> Dataset:
@@ -155,9 +155,7 @@ class HarnessTask:
             return []
 
         train_set = self.dataset["train"]
-        train_set = train_set.map(self._pre_process_sample, num_proc=self.num_proc)
-
-        return train_set
+        return train_set.map(self._pre_process_sample, num_proc=self.num_proc)
 
     @property
     def has_validation_set(self) -> bool:
@@ -168,7 +166,7 @@ class HarnessTask:
 
         """
 
-        return bool("validation" in self.dataset)
+        return "validation" in self.dataset
 
     @cached_property
     def validation_set(self) -> Dataset:
@@ -183,9 +181,7 @@ class HarnessTask:
             return []
 
         validation_set = self.dataset["validation"]
-        validation_set = validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
-
-        return validation_set
+        return validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
 
     @property
     def has_test_set(self) -> bool:
@@ -196,7 +192,7 @@ class HarnessTask:
 
         """
 
-        return bool("test" in self.dataset)
+        return "test" in self.dataset
 
     @cached_property
     def test_set(self) -> Dataset:
@@ -211,9 +207,7 @@ class HarnessTask:
             return []
 
         test_set = self.dataset["test"]
-        test_set = test_set.map(self._pre_process_sample, num_proc=self.num_proc)
-
-        return test_set
+        return test_set.map(self._pre_process_sample, num_proc=self.num_proc)
 
     @property
     def config(self) -> Dict[str, Any]:

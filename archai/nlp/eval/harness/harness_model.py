@@ -60,10 +60,7 @@ class HarnessModel:
 
         """
 
-        if torch.cuda.is_available():
-            return "cuda"
-
-        return "cpu"
+        return "cuda" if torch.cuda.is_available() else "cpu"
 
     @property
     def eos_token(self) -> str:

@@ -384,7 +384,7 @@ class ReCoRDHarnessTask(HarnessTask):
         ]
 
     def compute_results(self, sample: Dict[str, Any], results: Tuple[Any, ...]) -> None:
-        pred_idx = np.argmax(np.array([result for result in results]))
+        pred_idx = np.argmax(np.array(list(results)))
 
         prediction = {"idx": sample["idx"], "prediction_text": sample["entities"][pred_idx]}
         reference = {"idx": sample["idx"], "answers": sample["answers"]}

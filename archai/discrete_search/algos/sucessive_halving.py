@@ -61,7 +61,7 @@ class SucessiveHalvingSearch(Searcher):
             if len(selected_models) <= 1:
                 self.logger.info(f'Search ended. Architecture selected: {selected_models[0].archid}')
                 self.search_space.save_arch(selected_models[0], self.output_dir / 'final_model')
-                
+
                 break
 
             self.logger.info(
@@ -96,7 +96,7 @@ class SucessiveHalvingSearch(Searcher):
             self.search_state.save_all_2d_pareto_evolution_plots(self.output_dir)
 
             # Keeps only the best `1/self.budget_multiplier` NDS frontiers
-            self.logger.info(f'Choosing models for the next iteration..')
+            self.logger.info('Choosing models for the next iteration..')
             nds_frontiers = get_non_dominated_sorting(selected_models, results, self.objectives)
             nds_frontiers = nds_frontiers[:int(len(nds_frontiers) * 1/self.budget_multiplier)]
 
@@ -106,6 +106,6 @@ class SucessiveHalvingSearch(Searcher):
             # Update parameters for next iteration
             self.iter_num += 1
             current_budget = current_budget * self.budget_multiplier
-        
+
         return self.search_state
 

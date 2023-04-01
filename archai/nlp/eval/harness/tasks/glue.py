@@ -95,7 +95,7 @@ class MNLIMatchedHarnessTask(HarnessTask):
 
     @property
     def has_validation_set(self) -> bool:
-        return bool("validation_matched" in self.dataset)
+        return "validation_matched" in self.dataset
 
     @cached_property
     def validation_set(self) -> Dataset:
@@ -103,9 +103,7 @@ class MNLIMatchedHarnessTask(HarnessTask):
             return []
 
         validation_set = self.dataset["validation_matched"]
-        validation_set = validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
-
-        return validation_set
+        return validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
 
     @property
     def has_test_set(self) -> bool:
@@ -142,7 +140,7 @@ class MNLIMismatchedHarnessTask(MNLIMatchedHarnessTask):
 
     @property
     def has_validation_set(self) -> bool:
-        return bool("validation_mismatched" in self.dataset)
+        return "validation_mismatched" in self.dataset
 
     @cached_property
     def validation_set(self) -> Dataset:
@@ -150,9 +148,7 @@ class MNLIMismatchedHarnessTask(MNLIMatchedHarnessTask):
             return []
 
         validation_set = self.dataset["validation_mismatched"]
-        validation_set = validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
-
-        return validation_set
+        return validation_set.map(self._pre_process_sample, num_proc=self.num_proc)
 
 
 class MRPCHarnessTask(HarnessTask):

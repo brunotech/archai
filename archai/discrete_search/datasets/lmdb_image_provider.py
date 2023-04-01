@@ -103,38 +103,37 @@ class TensorpackLmdbImageDataset(Dataset):
         try:
             sample = self._get_datapoint(idx)
 
-            if self.img_format == 'numpy':
-                img = np.frombuffer(sample[self.img_key], dtype=np.uint8).reshape((-1, 1))
-                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-                img = img[..., ::-1].copy() if self.is_bgr else img
-
-                if self.ones_mask:
-                    mask = np.ones(img.shape[:2], dtype=np.uint8)
-                elif self.zeroes_mask or len(sample[self.mask_key]) == 0:
-                    mask = np.zeros(img.shape[:2], dtype=np.uint8)
-                else:
-                    mask_cv2_buf = np.frombuffer(sample[self.mask_key], dtype=np.uint8).reshape((-1, 1))
-                    mask = cv2.imdecode(mask_cv2_buf, cv2.IMREAD_GRAYSCALE)
-                
-                sample = {'image': img, 'mask': mask}
-
-                if self.augmentation_fn:
-                    sample = self.augmentation_fn(**sample)
-
-                if self.img_size:
-                    sample['image'] = cv2.resize(sample['image'], self.img_size)
-                    sample['mask'] = cv2.resize(
-                        sample['mask'], self.img_size,
-                        interpolation=self.mask_interpolation_method
-                    )
-
-                if self.valid_resolutions:
-                    assert img.shape[:2] in self.valid_resolutions
-                    assert mask.shape[:2] in self.valid_resolutions
-
-            else:
+            if self.img_format != 'numpy':
                 raise NotImplementedError(f'unsupported image format {self.img_format}')
 
+
+            img = np.frombuffer(sample[self.img_key], dtype=np.uint8).reshape((-1, 1))
+            img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+            img = img[..., ::-1].copy() if self.is_bgr else img
+
+            if self.ones_mask:
+                mask = np.ones(img.shape[:2], dtype=np.uint8)
+            elif self.zeroes_mask or len(sample[self.mask_key]) == 0:
+                mask = np.zeros(img.shape[:2], dtype=np.uint8)
+            else:
+                mask_cv2_buf = np.frombuffer(sample[self.mask_key], dtype=np.uint8).reshape((-1, 1))
+                mask = cv2.imdecode(mask_cv2_buf, cv2.IMREAD_GRAYSCALE)
+
+            sample = {'image': img, 'mask': mask}
+
+            if self.augmentation_fn:
+                sample = self.augmentation_fn(**sample)
+
+            if self.img_size:
+                sample['image'] = cv2.resize(sample['image'], self.img_size)
+                sample['mask'] = cv2.resize(
+                    sample['mask'], self.img_size,
+                    interpolation=self.mask_interpolation_method
+                )
+
+            if self.valid_resolutions:
+                assert img.shape[:2] in self.valid_resolutions
+                assert mask.shape[:2] in self.valid_resolutions
 
             return {
                 'image': torch.tensor(

@@ -34,9 +34,7 @@ class PriorityQueue:
     def peek(self):
         """ returns a tuple containing the (priority, data) that was enqueued. """
         self.lock.acquire()
-        item = None
-        if len(self.queue) > 0:
-            item = self.queue[0]
+        item = self.queue[0] if len(self.queue) > 0 else None
         self.lock.release()
         return item
 

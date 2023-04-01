@@ -19,10 +19,11 @@ def get_model_blob(friendly_name, conn_string, specific_file):
     logger.setLevel(logging.ERROR)
     container = ContainerClient.from_connection_string(conn_string, container_name="models", logger=logger,
                                                        logging_enable=False)
-    if not container.exists():
-        return (False, None)
-
-    return container.get_blob_client(f'{friendly_name}/{specific_file}')
+    return (
+        container.get_blob_client(f'{friendly_name}/{specific_file}')
+        if container.exists()
+        else (False, None)
+    )
 
 
 def download_model(friendly_name, folder, conn_string, specific_file=None, all_files=False, no_dlc=False):
@@ -51,23 +52,19 @@ def download_model(friendly_name, folder, conn_string, specific_file=None, all_f
         model_name = blob.name[len(prefix):]
         parts = os.path.splitext(model_name)
         download = False
-        if all_files:
+        if not all_files and specific_file and specific_file != model_name:
+            continue
+        elif not all_files and specific_file or all_files:
             download = True
             local_file = os.path.join(folder, model_name)
-        elif specific_file:
-            if specific_file != model_name:
-                continue
-            else:
-                download = True
-                local_file = os.path.join(folder, model_name)
 
         elif len(parts) > 1:
             filename, ext = parts
             if ext in supported:
                 if '.quant' in filename:
-                    local_file = os.path.join(folder, 'model.quant' + ext)
+                    local_file = os.path.join(folder, f'model.quant{ext}')
                 else:
-                    local_file = os.path.join(folder, 'model' + ext)
+                    local_file = os.path.join(folder, f'model{ext}')
                 download = True
 
         if download:
@@ -97,13 +94,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     friendly_name = args.name
-    if not friendly_name:
-        friendly_names = [e['name'] for e in get_all_status_entities()]
-    else:
-        friendly_names = [friendly_name]
-
+    friendly_names = (
+        [friendly_name]
+        if friendly_name
+        else [e['name'] for e in get_all_status_entities()]
+    )
     specific_file = args.file
-    all_files = False if specific_file else True
+    all_files = not specific_file
 
     for friendly_name in friendly_names:
         found, model, file = download_model(friendly_name, friendly_name, conn_string, specific_file, all_files)

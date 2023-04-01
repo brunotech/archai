@@ -95,19 +95,15 @@ class MoBananasSearch(Searcher):
             for _ in range(mutations_per_parent)
         ]
 
-        # Removes duplicates
-        mutated_models = [
-            m for m in mutated_models 
-            if m.archid not in self.evaluated_archids
-        ]
-
-        if not mutated_models:
+        if mutated_models := [
+            m for m in mutated_models if m.archid not in self.evaluated_archids
+        ]:
+            return mutated_models
+        else:
             raise ValueError(
                 'Mutations yielded 0 new models. '
                 'Try increasing `num_parents` and `mutations_per_parent` parameters'
             )
-
-        return mutated_models
 
     def predict_expensive_objectives(self, archs: List[ArchaiModel]) -> Dict[str, MeanVar]:
         ''' Predicts expensive objectives for `archs` using surrogate model ''' 
@@ -123,19 +119,15 @@ class MoBananasSearch(Searcher):
                           pred_expensive_objs: Dict[str, MeanVar],
                           cheap_objs: Dict[str, np.ndarray]) -> List[int]:
         ''' Returns the selected architecture list indices from Thompson Sampling  '''                           
-        simulation_results = cheap_objs
-
-        # Simulates results from surrogate model assuming N(pred_mean, pred_std)
-        simulation_results.update({
+        simulation_results = cheap_objs | {
             obj_name: self.rng.randn(len(archs)) * np.sqrt(pred.var) + pred.mean
             for obj_name, pred in pred_expensive_objs.items()
-        })
-
+        }
         # Performs non-dominated sorting
         # TODO: Shuffle elements inside each frontier to avoid giving advantage to a specific part of the pareto
         # or add crowd-sorting
         nds_frontiers = get_non_dominated_sorting(archs, simulation_results, self.objectives)
-        
+
         return [
             idx for frontier in nds_frontiers
             for idx in frontier['indices']

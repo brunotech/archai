@@ -166,7 +166,7 @@ def encode_dataset(
     fn_kwargs["mapping_column_name"] = mapping_column_name
 
     remove_columns = [v.column_names for _, v in dataset.items()]
-    assert all([c[0] for c in remove_columns])
+    assert all(c[0] for c in remove_columns)
 
     mapping_kwargs = {"batched": batched}
     if isinstance(dataset, DatasetDict):

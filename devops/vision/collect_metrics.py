@@ -97,7 +97,7 @@ def get_metrics(img_shape, transpose, dataset, outputs, use_pillow=False):
 
     output_list = [x for x in os.listdir(outputs) if x.endswith('.raw')]
     output_list.sort()
-    if len(output_list) == 0:
+    if not output_list:
         print("No output files matching 'outputs/*.raw' found")
         return
 
@@ -185,11 +185,7 @@ def get_metrics(img_shape, transpose, dataset, outputs, use_pillow=False):
         precision = tps / np.maximum(1, tps + fps)
         # assert np.all(np.logical_not(np.isnan(precision)))
         # precision[np.isnan(precision)] = 0
-        if tps[-1] == 0:
-            recall = tps / 0.0000001
-        else:
-            recall = tps / tps[-1]
-
+        recall = tps / 0.0000001 if tps[-1] == 0 else tps / tps[-1]
         # stop when full recall attained
         # and reverse the outputs so recall is decreasing
         last_ind = tps.searchsorted(tps[-1])
@@ -245,9 +241,9 @@ if __name__ == '__main__':
     dataset = args.input
     if not dataset:
         dataset = os.getenv("INPUT_DATASET")
-        if not dataset:
-            print("please provide --input or set your INPUT_DATASET environment vairable")
-            sys.exit(1)
+    if not dataset:
+        print("please provide --input or set your INPUT_DATASET environment vairable")
+        sys.exit(1)
 
     transpose = args.transpose
     if transpose:
@@ -262,10 +258,7 @@ if __name__ == '__main__':
         print("Experiment 'output' dir not found: " + output_dir)
         sys.exit(1)
 
-    image_shape = (256, 256)
-    if args.image_shape:
-        image_shape = tuple(eval(args.image_shape))
-
+    image_shape = tuple(eval(args.image_shape)) if args.image_shape else (256, 256)
     if args.show:
         show_output(image_shape, transpose, dataset, output_dir)
     else:

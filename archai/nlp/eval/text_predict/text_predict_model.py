@@ -47,7 +47,7 @@ class TextPredictModel:
 
         """
 
-        if len(inputs) == 0:
+        if not inputs:
             inputs = (self.space_token_id,)
         elif len(inputs) > self.max_seq_length:
             inputs = inputs[(-1 * self.max_seq_length) :]
@@ -69,7 +69,7 @@ class TextPredictModel:
 
         """
 
-        if len(input_ids) == 0:
+        if not input_ids:
             return 0.0
 
         with torch.no_grad():
@@ -245,7 +245,7 @@ class TextPredictONNXModel(TextPredictModel):
 
         """
 
-        if len(input_ids) == 0:
+        if not input_ids:
             input_ids = (self.space_token_id,)
         elif len(input_ids) > self.max_seq_length:
             input_ids = input_ids[(-1 * self.max_seq_length) :]
@@ -257,9 +257,11 @@ class TextPredictONNXModel(TextPredictModel):
             input_ids = input_ids[past_length:]
             past_sequence_length = past_length
 
-        ort_inputs = {}
-        ort_inputs["input_ids"] = np.ascontiguousarray(np.array(input_ids).reshape(self.batch_size, len(input_ids)))
-
+        ort_inputs = {
+            "input_ids": np.ascontiguousarray(
+                np.array(input_ids).reshape(self.batch_size, len(input_ids))
+            )
+        }
         if past_ids is None:
             past_key_values = self.config.past_key_values if hasattr(self.config, "past_key_values") else 2
             d_head = (
@@ -298,7 +300,7 @@ class TextPredictONNXModel(TextPredictModel):
 
         """
 
-        if len(input_ids) == 0:
+        if not input_ids:
             return 0.0
 
         loss = []

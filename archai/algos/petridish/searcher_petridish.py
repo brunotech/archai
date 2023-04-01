@@ -147,8 +147,7 @@ class SearcherPetridish(SearchCombinations):
     @ray.remote(num_gpus=1)
     def search_model_desc_dist(searcher:'SearcherPetridish', conf_search:Config,
         hull_point:ConvexHullPoint, model_desc_builder:ModelDescBuilder,
-        trainer_class:TArchTrainer, finalizers:Finalizers, common_state:CommonState)\
-            ->ConvexHullPoint:
+        trainer_class:TArchTrainer, finalizers:Finalizers, common_state:CommonState) -> ConvexHullPoint:
 
         # as this runs in different process, initialize globals
         common.init_from(common_state)
@@ -168,17 +167,19 @@ class SearcherPetridish(SearchCombinations):
             model_desc, trainer_class, finalizers)
 
         cells, reductions, nodes = hull_point.cells_reductions_nodes
-        new_point = ConvexHullPoint(JobStage.SEARCH, hull_point.id,
-                                    hull_point.sampling_count, model_desc,
-                                    (cells, reductions, nodes+1), # we added a node
-                                    metrics=search_metrics)
-        return new_point
+        return ConvexHullPoint(
+            JobStage.SEARCH,
+            hull_point.id,
+            hull_point.sampling_count,
+            model_desc,
+            (cells, reductions, nodes + 1),  # we added a node
+            metrics=search_metrics,
+        )
 
     @staticmethod
     @ray.remote(num_gpus=1)
     def train_model_desc_dist(searcher:'SearcherPetridish', conf_train:Config,
-                              hull_point:ConvexHullPoint, common_state:CommonState)\
-            ->ConvexHullPoint:
+                              hull_point:ConvexHullPoint, common_state:CommonState) -> ConvexHullPoint:
         # as this runs in different process, initialize globals
         common.init_from(common_state)
 
@@ -187,13 +188,15 @@ class SearcherPetridish(SearchCombinations):
         model_metrics = searcher.train_model_desc(hull_point.model_desc, conf_train)
         model_stats = nas_utils.get_model_stats(model_metrics.model)
 
-        new_point = ConvexHullPoint(hull_point.next_stage(), hull_point.id, hull_point.
-                                    sampling_count, hull_point.model_desc,
-                                    hull_point.cells_reductions_nodes,
-                                    model_metrics.metrics,
-                                    model_stats)
-
-        return new_point
+        return ConvexHullPoint(
+            hull_point.next_stage(),
+            hull_point.id,
+            hull_point.sampling_count,
+            hull_point.model_desc,
+            hull_point.cells_reductions_nodes,
+            model_metrics.metrics,
+            model_stats,
+        )
 
     def _add_node(self, model_desc:ModelDesc, model_desc_builder:ModelDescBuilder)->None:
         for ci, cell_desc in enumerate(model_desc.cell_descs()):
@@ -309,15 +312,11 @@ class SearcherPetridish(SearchCombinations):
     @overrides
     def build_model_desc(self, model_desc_builder:ModelDescBuilder,
                          conf_model_desc:Config,
-                         reductions:int, cells:int, nodes:int)->ModelDesc:
+                         reductions:int, cells:int, nodes:int) -> ModelDesc:
         # reset macro params in copy of config
         conf_model_desc = copy.deepcopy(conf_model_desc)
         conf_model_desc['n_reductions'] = reductions
         conf_model_desc['n_cells'] = cells
         conf_model_desc['cell']['n_nodes'] = nodes
 
-        # create model desc for search using model config
-        # we will build model without call to model_desc_builder for pre-training
-        model_desc = model_desc_builder.build(conf_model_desc, template=None)
-
-        return model_desc
+        return model_desc_builder.build(conf_model_desc, template=None)

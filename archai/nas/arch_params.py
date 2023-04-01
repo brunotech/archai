@@ -50,12 +50,8 @@ class ArchParams(UserDict):
         # TODO: enforce type checking if debugger is active?
         return self._by_kind(kind) # type: ignore
 
-    def has_kind(self, kind:str)->bool:
-        # TODO: may be optimize to avoid split() calls?
-        for name in self.keys():
-            if name.split('.')[-1]==kind:
-                return True
-        return False
+    def has_kind(self, kind:str) -> bool:
+        return any(name.split('.')[-1]==kind for name in self.keys())
 
     @staticmethod
     def from_module(module:nn.Module, recurse:bool=False)->'ArchParams':

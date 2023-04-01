@@ -15,9 +15,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("pre_trained_model_path", type=str, help="Path to the pre-trained model file.")
 
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

@@ -122,9 +122,7 @@ def hash_module(matrix, labeling):
            ''.join(sorted(out_neighbors)) + '|' +
            hashes[v]).encode('utf-8')).hexdigest())
     hashes = new_hashes
-  fingerprint = hashlib.md5(str(sorted(hashes)).encode('utf-8')).hexdigest()
-
-  return fingerprint
+  return hashlib.md5(str(sorted(hashes)).encode('utf-8')).hexdigest()
 
 
 def permute_graph(graph, label, permutation):
@@ -159,7 +157,7 @@ def is_isomorphic(graph1, graph2):
   vertices = np.shape(matrix1)[0]
   # Note: input and output in our constrained graphs always map to themselves
   # but this script does not enforce that.
-  for perm in itertools.permutations(range(0, vertices)):
+  for perm in itertools.permutations(range(vertices)):
     pmatrix1, plabel1 = permute_graph(matrix1, label1, perm)
     if np.array_equal(pmatrix1, matrix2) and plabel1 == label2:
       return True

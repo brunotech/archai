@@ -4,17 +4,17 @@ import tqdm
 from status import get_all_status_entities, get_status_table_service, update_status_entity
 from usage import get_all_usage_entities, get_usage_table_service, update_usage_entity
 
-CONNECTION_NAME = 'MODEL_STORAGE_CONNECTION_STRING'
 STATUS_TABLE_NAME = 'STATUS_TABLE_NAME'
 
 STATUS_TABLE = 'status'
 CONNECTION_STRING = ''
 
+CONNECTION_NAME = 'MODEL_STORAGE_CONNECTION_STRING'
 # the blobs can be easily copied using azcopy, see https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-blobs-copy
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Backup the status and usage tables to a new azure storage account ' +
-        f'{CONNECTION_NAME} environment variable.')
+        description=f'Backup the status and usage tables to a new azure storage account {CONNECTION_NAME} environment variable.'
+    )
     parser.add_argument('--target', help='Connection string for the target storage account.')
     args = parser.parse_args()
     if not args.target:

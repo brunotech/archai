@@ -60,7 +60,7 @@ class Evaluater(EnforceOverrides):
         return EvalResult(train_metrics)
 
     def train_model(self, conf_train:Config, model:nn.Module,
-                    checkpoint:Optional[CheckPoint])->Metrics:
+                    checkpoint:Optional[CheckPoint]) -> Metrics:
         conf_loader = conf_train['loader']
         conf_train = conf_train['trainer']
 
@@ -68,8 +68,7 @@ class Evaluater(EnforceOverrides):
         data_loaders = self.get_data(conf_loader)
 
         trainer = Trainer(conf_train, model, checkpoint)
-        train_metrics = trainer.fit(data_loaders)
-        return train_metrics
+        return trainer.fit(data_loaders)
 
     def get_data(self, conf_loader:Config)->data.DataLoaders:
 

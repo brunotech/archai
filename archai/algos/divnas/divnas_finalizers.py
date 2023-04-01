@@ -36,14 +36,14 @@ class DivnasFinalizers(Finalizers):
 
         # wrap all cells in the model
         self._divnas_cells:Dict[int, Divnas_Cell] = {}
-        for _, cell in enumerate(model.cells):
+        for cell in model.cells:
             divnas_cell = Divnas_Cell(cell)
             self._divnas_cells[id(cell)] = divnas_cell
 
         # go through all edges in the DAG and if they are of divop
         # type then set them to collect activations
         sigma = conf['nas']['search']['divnas']['sigma']
-        for _, dcell in enumerate(self._divnas_cells.values()):
+        for dcell in self._divnas_cells.values():
             dcell.collect_activations(DivOp, sigma)
 
         # now we need to run one evaluation epoch to collect activations
@@ -69,7 +69,7 @@ class DivnasFinalizers(Finalizers):
 
     @overrides
     def finalize_cell(self, cell:Cell, cell_index:int,
-                      model_desc:ModelDesc, *args, **kwargs)->CellDesc:
+                      model_desc:ModelDesc, *args, **kwargs) -> CellDesc:
         # first finalize each node, we will need to recreate node desc with final version
         max_final_edges = model_desc.max_final_edges
 
@@ -86,22 +86,24 @@ class DivnasFinalizers(Finalizers):
         dcell.clear_collect_activations()
 
         desc = cell.desc
-        finalized = CellDesc(
-            id = desc.id, cell_type=desc.cell_type, conf_cell=desc.conf_cell,
+        return CellDesc(
+            id=desc.id,
+            cell_type=desc.cell_type,
+            conf_cell=desc.conf_cell,
             stems=[cell.s0_op.finalize()[0], cell.s1_op.finalize()[0]],
             stem_shapes=desc.stem_shapes,
-            nodes = node_descs, node_shapes=desc.node_shapes,
+            nodes=node_descs,
+            node_shapes=desc.node_shapes,
             post_op=cell.post_op.finalize()[0],
             out_shape=desc.out_shape,
-            trainables_from = desc.trainables_from
+            trainables_from=desc.trainables_from,
         )
-        return finalized
 
 
     @overrides
     def finalize_node(self, node:nn.ModuleList, node_index:int,
                       node_desc:NodeDesc, max_final_edges:int,
-                      cov, *args, **kwargs)->NodeDesc:
+                      cov, *args, **kwargs) -> NodeDesc:
         # node is a list of edges
         assert len(node) >= max_final_edges
 
@@ -115,15 +117,13 @@ class DivnasFinalizers(Finalizers):
         assert cov.shape[0] >= max_final_edges
 
         # get total number of ops incoming to this node
-        num_ops = sum([edge._op.num_valid_div_ops for edge in node])
+        num_ops = sum(edge._op.num_valid_div_ops for edge in node)
 
         # and collect some bookkeeping indices
         edge_num_and_op_ind = []
         for j, edge in enumerate(node):
             if type(edge._op) == DivOp:
-                for k in range(edge._op.num_valid_div_ops):
-                    edge_num_and_op_ind.append((j, k))
-
+                edge_num_and_op_ind.extend((j, k) for k in range(edge._op.num_valid_div_ops))
         assert len(edge_num_and_op_ind) == num_ops
 
         # run brute force set selection algorithm

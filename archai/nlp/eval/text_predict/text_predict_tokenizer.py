@@ -95,7 +95,7 @@ class TextPredictTokenizer:
 
         """
 
-        return set([i for i in range(len(self)) if self[i][0] in SEPARATOR_TOKENS_SET])
+        return {i for i in range(len(self)) if self[i][0] in SEPARATOR_TOKENS_SET}
 
     @cached_property
     def upper_tokens(self) -> Set:
@@ -106,9 +106,11 @@ class TextPredictTokenizer:
 
         """
 
-        return set(
-            [i for i in range(len(self)) if any([c.isupper() and c not in SEPARATOR_TOKENS_SET for c in self[i]])]
-        )
+        return {
+            i
+            for i in range(len(self))
+            if any(c.isupper() and c not in SEPARATOR_TOKENS_SET for c in self[i])
+        }
 
     @functools.lru_cache(maxsize=128)
     def encode(self, text: str) -> List[int]:
@@ -148,8 +150,8 @@ class TextPredictTokenizer:
 
         """
 
-        if len(filter_prefix) > 0 and filter_prefix[0] == " ":
-            filter_prefix = "Ġ" + filter_prefix[1:]
+        if filter_prefix != "" and filter_prefix[0] == " ":
+            filter_prefix = f"Ġ{filter_prefix[1:]}"
 
         filtered_tokens = None
         filter_prefix_len = len(filter_prefix)
@@ -163,7 +165,7 @@ class TextPredictTokenizer:
             None,
         )
 
-        if len(filter_prefix) > 0 and cached_filter_prefix is not None:
+        if filter_prefix != "" and cached_filter_prefix is not None:
             pre_filtered_tokens = self.filter_tokens_cache[cached_filter_prefix]
             filtered_tokens = [
                 (idx, token)
@@ -194,9 +196,7 @@ class TextPredictTokenizer:
 
         """
 
-        filtered_tokens = self._filter_tokens(filter_prefix)
-
-        return filtered_tokens
+        return self._filter_tokens(filter_prefix)
 
     def clean_text(self, text: str, add_bos_text: Optional[bool] = True) -> str:
         """Performs pre-processing to clean text.

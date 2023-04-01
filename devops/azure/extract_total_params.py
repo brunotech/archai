@@ -18,9 +18,7 @@ def get_dlc_html(entity, conn_string):
     name = entity['name']
     temp = os.getenv('TEMP')
     model_found, _, local_file = download_model(name, temp, conn_string, specific_file='model.quant.html')
-    if model_found:
-        return local_file
-    return None
+    return local_file if model_found else None
 
 
 def update_total_params(conn_string):
@@ -30,10 +28,9 @@ def update_total_params(conn_string):
         sys.exit(1)
 
     for e in get_all_status_entities():
-        name = e['name']
         if 'params' not in e:
-            html = get_dlc_html(e, conn_string)
-            if html:
+            name = e['name']
+            if html := get_dlc_html(e, conn_string):
                 _, params = get_dlc_metrics(html)
                 if params != 0:
                     print(f"model {name} has {params} parameters")
